@@ -6,7 +6,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
     {
       id: 1,
       type: 'bot',
-      content: "Hi! I'm your AI startup advisor with voice capabilities. I have access to your business data and can provide personalized advice. You can type or speak to me!",
+      content: "Hi! I'm your AI startup advisor with voice capabilities powered by Eleven Labs. I have access to your business data and can provide personalized advice. You can type or speak to me!",
       timestamp: new Date()
     }
   ]);
@@ -16,11 +16,12 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [businessData, setBusinessData] = useState(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   
   const messagesEndRef = useRef(null);
   const chatInputRef = useRef(null);
   const recognitionRef = useRef(null);
-  const synthesisRef = useRef(null);
+  const audioRef = useRef(null);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -49,11 +50,6 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
       recognitionRef.current.onend = () => {
         setIsListening(false);
       };
-    }
-
-    // Initialize speech synthesis
-    if ('speechSynthesis' in window) {
-      synthesisRef.current = window.speechSynthesis;
     }
 
     // Load business data on component mount
@@ -96,9 +92,9 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
     }
   };
 
-  // Enhanced OpenAI API call with business context
-  const callOpenAI = async (userMessage, businessContext) => {
-    const response = await fetch('/api/openai-voice', {
+  // Enhanced Gemini API call with business context
+  const callGeminiAPI = async (userMessage, businessContext) => {
+    const response = await fetch('/api/gemini-voice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -116,6 +112,47 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
     return data.message;
   };
 
+  // Eleven Labs Text-to-Speech
+  const speakWithElevenLabs = async (text) => {
+    if (!voiceEnabled) return;
+    
+    setIsLoadingAudio(true);
+    setIsSpeaking(true);
+    
+    try {
+      const response = await fetch('/api/elevenlabs-tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate speech');
+      }
+      
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        audioRef.current.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        await audioRef.current.play();
+      }
+    } catch (error) {
+      console.error('Text-to-speech error:', error);
+      setIsSpeaking(false);
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
   const handleSendMessage = async (messageText = inputMessage) => {
     if (!messageText.trim()) return;
 
@@ -131,7 +168,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
     setIsLoading(true);
 
     try {
-      const botResponse = await callOpenAI(messageText, businessData);
+      const botResponse = await callGeminiAPI(messageText, businessData);
       
       const botMessage = {
         id: Date.now() + 1,
@@ -142,9 +179,9 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
 
       setMessages(prev => [...prev, botMessage]);
       
-      // Speak the response if voice is enabled
-      if (voiceEnabled && synthesisRef.current) {
-        speakText(botResponse);
+      // Speak the response using Eleven Labs if voice is enabled
+      if (voiceEnabled) {
+        await speakWithElevenLabs(botResponse);
       }
     } catch (error) {
       const errorMessage = {
@@ -156,24 +193,6 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const speakText = (text) => {
-    if (synthesisRef.current && voiceEnabled) {
-      // Cancel any ongoing speech
-      synthesisRef.current.cancel();
-      
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.pitch = 1;
-      utterance.volume = 0.8;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      synthesisRef.current.speak(utterance);
     }
   };
 
@@ -190,11 +209,20 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   };
 
   const toggleSpeaking = () => {
-    if (isSpeaking && synthesisRef.current) {
-      synthesisRef.current.cancel();
+    if (isSpeaking && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
       setIsSpeaking(false);
     }
     setVoiceEnabled(!voiceEnabled);
+  };
+
+  const stopSpeaking = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setIsSpeaking(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -214,13 +242,17 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
 
   return (
     <div className="flex flex-col h-[700px] bg-gray-50 rounded-lg shadow-lg">
+      {/* Hidden audio element for Eleven Labs playback */}
+      <audio ref={audioRef} style={{ display: 'none' }} />
+      
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-t-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Bot className="w-6 h-6" />
             <div>
-              <h3 className="font-semibold">Voice AI Startup Advisor</h3>
+              <h3 className="font-semibold">AI Startup Advisor</h3>
+              <p className="text-xs text-blue-100">Powered by Gemini & Eleven Labs</p>
               {businessData && (
                 <p className="text-sm text-blue-100">
                   Connected to {businessData.companyName}
@@ -238,6 +270,15 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
             >
               {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
             </button>
+            {isSpeaking && (
+              <button
+                onClick={stopSpeaking}
+                className="p-2 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
+                title="Stop speaking"
+              >
+                <VolumeX className="w-4 h-4" />
+              </button>
+            )}
             {businessData && (
               <div className="flex items-center space-x-1 bg-blue-500 px-2 py-1 rounded text-xs">
                 <Database className="w-3 h-3" />
@@ -328,7 +369,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
           </div>
         )}
 
-        {isSpeaking && (
+        {(isSpeaking || isLoadingAudio) && (
           <div className="flex justify-start">
             <div className="flex items-start space-x-2">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
@@ -336,12 +377,21 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
               </div>
               <div className="bg-white border shadow-sm rounded-lg p-3">
                 <div className="flex items-center space-x-2">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                  </div>
-                  <span className="text-sm text-gray-500">Speaking...</span>
+                  {isLoadingAudio ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-sm text-gray-500">Generating speech...</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                      <span className="text-sm text-gray-500">Speaking with Eleven Labs...</span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -359,6 +409,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
               key={index}
               onClick={() => handleSendMessage(prompt)}
               className="bg-gradient-to-r from-blue-100 to-purple-100 hover:from-blue-200 hover:to-purple-200 px-3 py-2 rounded-full text-sm whitespace-nowrap transition-colors text-gray-700"
+              disabled={isLoading}
             >
               {prompt}
             </button>
