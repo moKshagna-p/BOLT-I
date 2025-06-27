@@ -83,8 +83,6 @@ const GlobalStyle = createGlobalStyle`
     margin-bottom: 0.5rem;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
     letter-spacing: -0.025em;
-    opacity: 0;
-    animation: fadeInRight 0.6s ease-out forwards;
   }
 
   .section-description {
@@ -93,8 +91,6 @@ const GlobalStyle = createGlobalStyle`
     margin-bottom: 2rem;
     max-width: 600px;
     line-height: 1.6;
-    opacity: 0;
-    animation: fadeInRight 0.6s ease-out 0.2s forwards;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
   }
 
@@ -103,11 +99,8 @@ const GlobalStyle = createGlobalStyle`
     border-radius: 1rem;
     border: 1px solid rgba(139, 92, 246, 0.2);
     padding: 1.5rem;
-    transition: all 0.3s ease;
     backdrop-filter: blur(12px);
-    opacity: 0;
-    transform: translateY(15px);
-    animation: fadeInUp 0.5s ease-out forwards;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   .resource-card:hover {
@@ -200,17 +193,23 @@ const GlobalStyle = createGlobalStyle`
   .section-visible {
     opacity: 1;
     transform: translateY(0);
-    transition: all 0.5s ease-out;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .section-hidden {
     opacity: 0;
     transform: translateY(15px);
-    transition: all 0.5s ease-out;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   body {
     background: rgb(18, 18, 18);
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 33, 168, 0.3) rgba(107, 33, 168, 0.1);
+    scroll-behavior: smooth;
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -225,17 +224,24 @@ const GlobalStyle = createGlobalStyle`
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(107, 33, 168, 0.3);
     border-radius: 10px;
+    transition: background-color 0.3s ease;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(107, 33, 168, 0.4);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 `;
 
 const StyledSidebar = styled.aside`
   .nav-button {
     position: relative;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: rgba(0, 0, 0, 0.75);
     border: 1px solid rgba(107, 33, 168, 0.2);
     margin-bottom: 0.5rem;
@@ -243,6 +249,7 @@ const StyledSidebar = styled.aside`
     transform: translateX(0);
     backdrop-filter: blur(12px);
     padding: 0.75rem 1rem;
+    will-change: transform, background-color, border-color;
   }
 
   .nav-button:hover {
@@ -258,9 +265,10 @@ const StyledSidebar = styled.aside`
   }
 
   .nav-button .nav-icon {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     color: rgb(192, 132, 252);
     opacity: 0.9;
+    will-change: transform, color, opacity;
   }
 
   .nav-button:hover .nav-icon,
@@ -275,6 +283,8 @@ const StyledSidebar = styled.aside`
     font-weight: 500;
     opacity: 0.95;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: color, opacity;
   }
 
   .nav-button:hover .nav-text,
@@ -282,6 +292,31 @@ const StyledSidebar = styled.aside`
     color: rgb(216, 180, 254);
     opacity: 1;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(107, 33, 168, 0.3) rgba(107, 33, 168, 0.1);
+    scroll-behavior: smooth;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(107, 33, 168, 0.1);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(107, 33, 168, 0.3);
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 33, 168, 0.4);
   }
 `;
 
@@ -304,34 +339,23 @@ const ResourcesPage: React.FC = () => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [visibleSections, setVisibleSections] = useState<string[]>([]);
 
-  // Smooth scroll to section
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const offset = 96; // Adjusted offset to match the header height
-      const elementPosition =
-        element.getBoundingClientRect().top + window.pageYOffset;
-
-      window.scrollTo({
-        top: elementPosition - offset,
-        behavior: "smooth",
-      });
-    }
-  };
-
   // Enhanced scroll handling with Intersection Observer
   useEffect(() => {
     const observerCallback = (entries: IntersectionObserverEntry[]) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
-          setVisibleSections((prev) => [...prev, entry.target.id]);
+          const sectionId = entry.target.id;
+          setActiveSection(sectionId);
+          setVisibleSections((prev) =>
+            Array.from(new Set([...prev, sectionId]))
+          );
         }
       });
     };
 
     const observer = new IntersectionObserver(observerCallback, {
-      threshold: 0.1,
-      rootMargin: "-100px",
+      threshold: 0.35, // Increased threshold for better accuracy
+      rootMargin: "-100px 0px -100px 0px",
     });
 
     // Observe all sections
@@ -342,48 +366,44 @@ const ResourcesPage: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  // Update scroll handling
+  // Optimized scroll handling
   useEffect(() => {
     const handleScroll = () => {
+      // Show/hide back to top button
       setShowBackToTop(window.scrollY > 300);
+    };
 
-      // Find the current section with improved accuracy
-      const sections = navigationSections.map((section) => section.id);
-      const scrollPosition = window.scrollY + window.innerHeight / 2;
-
-      // Check if we're at the bottom of the page
-      const isAtBottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 100;
-
-      if (isAtBottom) {
-        setActiveSection(sections[sections.length - 1]);
-        return;
-      }
-
-      // Find current section
-      let currentSection = sections[0];
-      sections.forEach((sectionId) => {
-        const element = document.getElementById(sectionId);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= window.innerHeight / 2) {
-            currentSection = sectionId;
-          }
-        }
-      });
-
-      if (currentSection !== activeSection) {
-        setActiveSection(currentSection);
+    // Use requestAnimationFrame for smoother scroll handling
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
-    const throttledHandleScroll = _.throttle(handleScroll, 100);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-    handleScroll(); // Initial call
-    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", throttledHandleScroll);
-  }, [activeSection]);
+  // Smooth scroll to section with easing
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      const offset = 96;
+      const elementPosition =
+        element.getBoundingClientRect().top + window.pageYOffset;
+      const targetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: targetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -995,14 +1015,7 @@ const ResourcesPage: React.FC = () => {
               {/* Main Content */}
               <main className="flex-1 space-y-20">
                 {/* Getting Started Section */}
-                <section
-                  id="getting-started"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("getting-started")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="getting-started" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Lightbulb className="w-8 h-8 text-purple-300" />
@@ -1027,14 +1040,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Business Planning Section */}
-                <section
-                  id="business-planning"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("business-planning")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="business-planning" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Target className="w-8 h-8 text-purple-300" />
@@ -1058,14 +1064,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Funding Section */}
-                <section
-                  id="funding"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("funding")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="funding" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <DollarSign className="w-8 h-8 text-purple-300" />
@@ -1089,14 +1088,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Product Development Section */}
-                <section
-                  id="product-dev"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("product-dev")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="product-dev" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Code className="w-8 h-8 text-purple-300" />
@@ -1121,14 +1113,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Growth & Marketing Section */}
-                <section
-                  id="growth"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("growth")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="growth" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <TrendingUp className="w-8 h-8 text-purple-300" />
@@ -1152,14 +1137,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Tools & Resources Section */}
-                <section
-                  id="tools"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("tools")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="tools" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Calculator className="w-8 h-8 text-purple-300" />
@@ -1179,14 +1157,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Learning Resources Section */}
-                <section
-                  id="education"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("education")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="education" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <GraduationCap className="w-8 h-8 text-purple-300" />
@@ -1205,7 +1176,6 @@ const ResourcesPage: React.FC = () => {
                         key={index}
                         className="resource-card group"
                         style={{
-                          animationDelay: `${index * 100}ms`,
                           background: "rgba(0, 0, 0, 0.4)",
                           backdropFilter: "blur(10px)",
                         }}
@@ -1233,14 +1203,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Operations Section */}
-                <section
-                  id="operations"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("operations")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="operations" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Settings className="w-8 h-8 text-purple-300" />
@@ -1265,14 +1228,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Legal & Compliance Section */}
-                <section
-                  id="legal"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("legal")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="legal" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Shield className="w-8 h-8 text-purple-300" />
@@ -1296,14 +1252,7 @@ const ResourcesPage: React.FC = () => {
                 </section>
 
                 {/* Community Section */}
-                <section
-                  id="community"
-                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
-                    visibleSections.includes("community")
-                      ? "section-visible"
-                      : "section-hidden"
-                  }`}
-                >
+                <section id="community" className="scroll-mt-32">
                   <div className="flex items-center mb-8">
                     <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
                       <Users className="w-8 h-8 text-purple-300" />
@@ -1330,16 +1279,13 @@ const ResourcesPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Back to Top Button with improved animation */}
+        {/* Back to Top Button */}
         {showBackToTop && (
           <button
             onClick={scrollToTop}
             className="fixed bottom-8 right-8 p-4 bg-black/80 text-purple-300 rounded-full shadow-lg 
                      hover:bg-black hover:text-purple-400 transition-all duration-300 transform 
-                     hover:scale-110 z-50 border border-purple-900/20 animate-fadeIn"
-            style={{
-              animation: "fadeInUp 0.3s ease-out forwards",
-            }}
+                     hover:scale-110 z-50 border border-purple-900/20"
           >
             <ArrowUp className="w-5 h-5" />
           </button>
