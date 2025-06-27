@@ -32,43 +32,45 @@ const Navigation: React.FC = () => {
           : "bg-black/60 backdrop-blur-sm"
       }`}
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8">
+        <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
+          <Link to="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <Zap className="w-8 h-8 text-purple-300 group-hover:text-purple-400 transition-colors duration-200" />
+              <Zap className="w-6 h-6 text-purple-300 group-hover:text-purple-400 transition-colors duration-200" />
             </div>
-            <span className="text-2xl font-bold text-white">TechFlow</span>
+            <span className="text-xl font-semibold text-white">TechFlow</span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-10">
-            {navItems.map((item, index) => (
+          <div className="hidden lg:flex items-center space-x-8">
+            {navItems.map((item) => (
               <Link
-                key={index}
+                key={item.path}
                 to={item.path}
-                className={`relative transition-colors duration-200 font-medium py-2 group ${
+                className={`relative text-sm font-medium transition-colors duration-200 ${
                   location.pathname === item.path
-                    ? "text-purple-300"
+                    ? "text-purple-400"
                     : "text-gray-300 hover:text-purple-400"
                 }`}
               >
-                {item.name}
-                <span
-                  className={`absolute bottom-0 left-0 h-0.5 bg-purple-500 transition-all duration-300 ease-out ${
-                    location.pathname === item.path
-                      ? "w-full"
-                      : "w-0 group-hover:w-full"
-                  }`}
-                ></span>
+                <span className="relative">
+                  {item.name}
+                  <span
+                    className={`absolute -bottom-1 left-0 w-full h-0.5 bg-purple-400 transform origin-left transition-transform duration-200 ${
+                      location.pathname === item.path
+                        ? "scale-x-100"
+                        : "scale-x-0"
+                    }`}
+                  />
+                </span>
               </Link>
             ))}
           </div>
 
           {/* Mobile menu button */}
           <button
-            className="lg:hidden p-2 rounded-lg hover:bg-purple-900/30 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2"
+            className="lg:hidden p-2 rounded-lg hover:bg-purple-900/30 transition-colors duration-200"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? (
@@ -83,19 +85,19 @@ const Navigation: React.FC = () => {
         <div
           className={`lg:hidden transition-all duration-300 ease-in-out ${
             isMobileMenuOpen
-              ? "max-h-96 opacity-100 pb-6"
+              ? "max-h-96 opacity-100 pb-4"
               : "max-h-0 opacity-0 overflow-hidden"
           }`}
         >
-          <div className="pt-4 space-y-2">
-            {navItems.map((item, index) => (
+          <div className="space-y-1">
+            {navItems.map((item) => (
               <Link
-                key={index}
+                key={item.path}
                 to={item.path}
-                className={`block w-full text-left px-4 py-3 rounded-lg transition-all duration-200 font-medium ${
+                className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
                   location.pathname === item.path
-                    ? "text-purple-300 bg-purple-900/30"
-                    : "text-gray-300 hover:text-purple-400 hover:bg-purple-900/20"
+                    ? "text-purple-400 bg-purple-900/20"
+                    : "text-gray-300 hover:text-purple-400 hover:bg-purple-900/10"
                 }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >

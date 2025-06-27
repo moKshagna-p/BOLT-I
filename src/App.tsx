@@ -11,6 +11,7 @@ import Navigation from "./components/Navigation";
 import ResourcesPage from "./components/ResourcesPage";
 import AnalyticsPage from "./components/AnalyticsPage";
 import LandingPage from "./components/LandingPage";
+import ChatPage from "./components/ChatPage";
 import PageTransition from "./components/PageTransition";
 
 const AppContent = () => {
@@ -50,7 +51,14 @@ const AppContent = () => {
             path="/chatbot"
             element={
               <PageTransition>
-                <div>Chatbot Page</div>
+                <div className="pt-20 min-h-screen bg-[#121212] relative">
+                  <div className="max-w-7xl mx-auto px-4 lg:px-8">
+                    <h1 className="text-3xl font-bold text-gray-100">
+                      Chatbot
+                    </h1>
+                    <p className="mt-4 text-gray-400">Coming soon...</p>
+                  </div>
+                </div>
               </PageTransition>
             }
           />
@@ -58,7 +66,7 @@ const AppContent = () => {
             path="/chat"
             element={
               <PageTransition>
-                <div>Chat Page</div>
+                <ChatPage />
               </PageTransition>
             }
           />
@@ -66,7 +74,14 @@ const AppContent = () => {
             path="/tinder"
             element={
               <PageTransition>
-                <div>Tinder Interface</div>
+                <div className="pt-20 min-h-screen bg-[#121212] relative">
+                  <div className="max-w-7xl mx-auto px-4 lg:px-8">
+                    <h1 className="text-3xl font-bold text-gray-100">
+                      Tinder Interface
+                    </h1>
+                    <p className="mt-4 text-gray-400">Coming soon...</p>
+                  </div>
+                </div>
               </PageTransition>
             }
           />

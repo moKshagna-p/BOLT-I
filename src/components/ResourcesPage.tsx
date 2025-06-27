@@ -921,377 +921,328 @@ const ResourcesPage: React.FC = () => {
   ];
 
   return (
-    <>
-      <StyledNav>
-        <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center space-x-2">
-                <Zap className="w-6 h-6 text-purple-500" />
-                <span className="text-xl font-semibold text-gray-100">
-                  TechFlow
-                </span>
-              </Link>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link
-                to="/analytics"
-                className="text-gray-300 hover:text-purple-400 transition-colors"
-              >
-                Analytics
-              </Link>
-              <Link
-                to="/chatbot"
-                className="text-gray-300 hover:text-purple-400 transition-colors"
-              >
-                Chatbot
-              </Link>
-              <Link to="/resources" className="text-purple-400 font-medium">
-                Resources
-              </Link>
-              <Link
-                to="/chat"
-                className="text-gray-300 hover:text-purple-400 transition-colors"
-              >
-                Chat
-              </Link>
-              <Link
-                to="/tinder"
-                className="text-gray-300 hover:text-purple-400 transition-colors"
-              >
-                Tinder-style interface
-              </Link>
-            </div>
-          </div>
-        </div>
-      </StyledNav>
-      <div className="pt-20 min-h-screen bg-[#121212] relative overflow-hidden">
-        {/* Main purple gradient beam */}
-        <div
-          className="absolute inset-0 rotate-45 opacity-40"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent 0%, #6B21A8 50%, transparent 100%)",
-            filter: "blur(80px)",
-            transform: "translateY(-50%) rotate(-45deg) scale(2)",
-          }}
-        />
-        {/* Subtle overlay for depth */}
-        <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px]" />
+    <div className="pt-20 min-h-screen bg-[#121212] relative overflow-hidden">
+      {/* Main purple gradient beam */}
+      <div
+        className="absolute inset-0 rotate-45 opacity-40"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent 0%, #6B21A8 50%, transparent 100%)",
+          filter: "blur(80px)",
+          transform: "translateY(-50%) rotate(-45deg) scale(2)",
+        }}
+      />
+      {/* Subtle overlay for depth */}
+      <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px]" />
 
-        {/* Content wrapper */}
-        <div className="relative z-10">
-          <GlobalStyle />
-          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
-            <div className="flex gap-8">
-              {/* Sticky Navigation Sidebar */}
-              <StyledSidebar className="hidden lg:block w-72 flex-shrink-0">
-                <div className="fixed w-72 pt-24 pb-8">
-                  <div className="bg-[#121212]/80 rounded-xl border border-purple-900/20 p-4 shadow-lg backdrop-blur-sm">
-                    <h3 className="text-lg font-semibold text-gray-100 mb-4 opacity-90 px-2">
-                      Resource Categories
-                    </h3>
-                    <nav className="space-y-2 max-h-[calc(100vh-180px)] overflow-y-auto pr-2 custom-scrollbar">
-                      {navigationSections.map((section) => {
-                        const Icon = section.icon;
-                        return (
-                          <button
-                            key={section.id}
-                            onClick={() => scrollToSection(section.id)}
-                            className={`nav-button w-full flex items-center text-left ${
-                              activeSection === section.id ? "active" : ""
-                            }`}
-                          >
-                            <Icon className="nav-icon w-5 h-5 mr-3 flex-shrink-0" />
-                            <span className="nav-text">{section.name}</span>
-                          </button>
-                        );
-                      })}
-                    </nav>
+      {/* Content wrapper */}
+      <div className="relative z-10">
+        <GlobalStyle />
+        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+          <div className="flex gap-8">
+            {/* Sticky Navigation Sidebar */}
+            <StyledSidebar className="hidden lg:block w-72 flex-shrink-0">
+              <div className="fixed w-72 pt-4 pb-8">
+                <div className="bg-[#121212]/80 rounded-xl border border-purple-900/20 p-4 shadow-lg backdrop-blur-sm">
+                  <h3 className="text-lg font-semibold text-gray-100 mb-4 opacity-90 px-2">
+                    Resource Categories
+                  </h3>
+                  <nav className="space-y-2 max-h-[calc(100vh-180px)] overflow-y-auto pr-2 custom-scrollbar">
+                    {navigationSections.map((section) => {
+                      const Icon = section.icon;
+                      return (
+                        <button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className={`nav-button w-full flex items-center text-left ${
+                            activeSection === section.id ? "active" : ""
+                          }`}
+                        >
+                          <Icon className="nav-icon w-5 h-5 mr-3 flex-shrink-0" />
+                          <span className="nav-text">{section.name}</span>
+                        </button>
+                      );
+                    })}
+                  </nav>
+                </div>
+              </div>
+            </StyledSidebar>
+
+            {/* Main Content */}
+            <main className="flex-1 space-y-20">
+              {/* Getting Started Section */}
+              <section id="getting-started" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Lightbulb className="w-8 h-8 text-purple-300" />
+                  </div>
+                  <div>
+                    <h2 className="section-title">Getting Started</h2>
+                    <p className="section-description">
+                      Essential resources and guides to help you start your
+                      journey
+                    </p>
                   </div>
                 </div>
-              </StyledSidebar>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {startupResources.slice(0, 3).map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-              {/* Main Content */}
-              <main className="flex-1 space-y-20">
-                {/* Getting Started Section */}
-                <section id="getting-started" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Lightbulb className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Getting Started</h2>
-                      <p className="section-description">
-                        Essential resources and guides to help you start your
-                        journey
-                      </p>
-                    </div>
+              {/* Business Planning Section */}
+              <section id="business-planning" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Target className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {startupResources.slice(0, 3).map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Business Planning</h2>
+                    <p className="section-description">
+                      Strategic tools and frameworks for business development
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {businessPlanningResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-                {/* Business Planning Section */}
-                <section id="business-planning" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Target className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Business Planning</h2>
-                      <p className="section-description">
-                        Strategic tools and frameworks for business development
-                      </p>
-                    </div>
+              {/* Funding Section */}
+              <section id="funding" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <DollarSign className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {businessPlanningResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Funding Resources</h2>
+                    <p className="section-description">
+                      Essential tools and guides for startup fundraising
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {fundingResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-                {/* Funding Section */}
-                <section id="funding" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <DollarSign className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Funding Resources</h2>
-                      <p className="section-description">
-                        Essential tools and guides for startup fundraising
-                      </p>
-                    </div>
+              {/* Product Development Section */}
+              <section id="product-dev" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Code className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {fundingResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Product Development</h2>
+                    <p className="section-description">
+                      Technical resources and best practices for building great
+                      products
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {productDevResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-                {/* Product Development Section */}
-                <section id="product-dev" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Code className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Product Development</h2>
-                      <p className="section-description">
-                        Technical resources and best practices for building
-                        great products
-                      </p>
-                    </div>
+              {/* Growth & Marketing Section */}
+              <section id="growth" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <TrendingUp className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {productDevResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Growth & Marketing</h2>
+                    <p className="section-description">
+                      Tools and strategies for sustainable business growth
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {growthResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-                {/* Growth & Marketing Section */}
-                <section id="growth" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <TrendingUp className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Growth & Marketing</h2>
-                      <p className="section-description">
-                        Tools and strategies for sustainable business growth
-                      </p>
-                    </div>
+              {/* Tools & Resources Section */}
+              <section id="tools" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Calculator className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {growthResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Tools & Resources</h2>
+                    <p className="section-description">
+                      Professional tools to help you make informed decisions
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {toolsAndCalculators.map((tool, index) => (
+                    <ToolCard key={index} tool={tool} index={index} />
+                  ))}
+                </div>
+              </section>
 
-                {/* Tools & Resources Section */}
-                <section id="tools" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Calculator className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Tools & Resources</h2>
-                      <p className="section-description">
-                        Professional tools to help you make informed decisions
-                      </p>
-                    </div>
+              {/* Learning Resources Section */}
+              <section id="education" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <GraduationCap className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                    {toolsAndCalculators.map((tool, index) => (
-                      <ToolCard key={index} tool={tool} index={index} />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Learning Resources</h2>
+                    <p className="section-description">
+                      Expand your knowledge with our curated educational content
+                    </p>
                   </div>
-                </section>
-
-                {/* Learning Resources Section */}
-                <section id="education" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <GraduationCap className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Learning Resources</h2>
-                      <p className="section-description">
-                        Expand your knowledge with our curated educational
-                        content
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid gap-6 lg:grid-cols-3">
-                    {educationalContent.map((content, index) => (
-                      <div
-                        key={index}
-                        className="resource-card group"
-                        style={{
-                          background: "rgba(0, 0, 0, 0.4)",
-                          backdropFilter: "blur(10px)",
-                        }}
-                      >
-                        <div className="p-3 bg-purple-900/30 rounded-xl mb-4">
-                          <content.icon className="w-6 h-6 text-purple-300 transition-all duration-300" />
-                        </div>
-                        <h3 className="text-xl font-semibold text-gray-100 mb-2 group-hover:text-purple-300 transition-colors">
-                          {content.title}
-                        </h3>
-                        <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                          {content.description}
-                        </p>
-                        <div className="flex justify-between text-sm mt-4 pt-4 border-t border-purple-900/30">
-                          <span className="text-purple-300">
-                            {content.count}
-                          </span>
-                          <span className="text-purple-300">
-                            {content.duration}
-                          </span>
-                        </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-3">
+                  {educationalContent.map((content, index) => (
+                    <div
+                      key={index}
+                      className="resource-card group"
+                      style={{
+                        background: "rgba(0, 0, 0, 0.4)",
+                        backdropFilter: "blur(10px)",
+                      }}
+                    >
+                      <div className="p-3 bg-purple-900/30 rounded-xl mb-4">
+                        <content.icon className="w-6 h-6 text-purple-300 transition-all duration-300" />
                       </div>
-                    ))}
-                  </div>
-                </section>
-
-                {/* Operations Section */}
-                <section id="operations" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Settings className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Operations</h2>
-                      <p className="section-description">
-                        Resources for efficient business operations and
-                        management
+                      <h3 className="text-xl font-semibold text-gray-100 mb-2 group-hover:text-purple-300 transition-colors">
+                        {content.title}
+                      </h3>
+                      <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                        {content.description}
                       </p>
+                      <div className="flex justify-between text-sm mt-4 pt-4 border-t border-purple-900/30">
+                        <span className="text-purple-300">{content.count}</span>
+                        <span className="text-purple-300">
+                          {content.duration}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {operationsResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
-                  </div>
-                </section>
+                  ))}
+                </div>
+              </section>
 
-                {/* Legal & Compliance Section */}
-                <section id="legal" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Shield className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Legal & Compliance</h2>
-                      <p className="section-description">
-                        Essential legal resources and compliance guides
-                      </p>
-                    </div>
+              {/* Operations Section */}
+              <section id="operations" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Settings className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2">
-                    {startupResources.slice(4, 6).map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Operations</h2>
+                    <p className="section-description">
+                      Resources for efficient business operations and management
+                    </p>
                   </div>
-                </section>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {operationsResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
 
-                {/* Community Section */}
-                <section id="community" className="scroll-mt-32">
-                  <div className="flex items-center mb-8">
-                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
-                      <Users className="w-8 h-8 text-purple-300" />
-                    </div>
-                    <div>
-                      <h2 className="section-title">Community</h2>
-                      <p className="section-description">
-                        Connect and grow with the startup community
-                      </p>
-                    </div>
+              {/* Legal & Compliance Section */}
+              <section id="legal" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Shield className="w-8 h-8 text-purple-300" />
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                    {communityResources.map((resource, index) => (
-                      <ResourceCard
-                        key={index}
-                        resource={resource}
-                        index={index}
-                      />
-                    ))}
+                  <div>
+                    <h2 className="section-title">Legal & Compliance</h2>
+                    <p className="section-description">
+                      Essential legal resources and compliance guides
+                    </p>
                   </div>
-                </section>
-              </main>
-            </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  {startupResources.slice(4, 6).map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
+
+              {/* Community Section */}
+              <section id="community" className="scroll-mt-32">
+                <div className="flex items-center mb-8">
+                  <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                    <Users className="w-8 h-8 text-purple-300" />
+                  </div>
+                  <div>
+                    <h2 className="section-title">Community</h2>
+                    <p className="section-description">
+                      Connect and grow with the startup community
+                    </p>
+                  </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                  {communityResources.map((resource, index) => (
+                    <ResourceCard
+                      key={index}
+                      resource={resource}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              </section>
+            </main>
           </div>
         </div>
-
-        {/* Back to Top Button */}
-        {showBackToTop && (
-          <button
-            onClick={scrollToTop}
-            className="fixed bottom-8 right-8 p-4 bg-black/80 text-purple-300 rounded-full shadow-lg 
-                     hover:bg-black hover:text-purple-400 transition-all duration-300 transform 
-                     hover:scale-110 z-50 border border-purple-900/20"
-          >
-            <ArrowUp className="w-5 h-5" />
-          </button>
-        )}
       </div>
-    </>
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 p-4 bg-black/80 text-purple-300 rounded-full shadow-lg 
+                   hover:bg-black hover:text-purple-400 transition-all duration-300 transform 
+                   hover:scale-110 z-50 border border-purple-900/20"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
+      )}
+    </div>
   );
 };
 
