@@ -1,41 +1,41 @@
-import React, { useState, useEffect } from 'react';
-import Navigation from './components/Navigation';
-import ResourcesPage from './components/ResourcesPage';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import Navigation from "./components/Navigation";
+import ResourcesPage from "./components/ResourcesPage";
+import AnalyticsPage from "./components/AnalyticsPage";
+import LandingPage from "./components/LandingPage";
 
-function App() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [currentPage, setCurrentPage] = useState('home');
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'resources':
-        return <ResourcesPage />;
-      default:
-        return (
-          <div className="pt-20 min-h-screen flex items-center justify-center">
-            <div className="text-center">
-              <h1 className="text-4xl font-bold text-gray-900 mb-4">Welcome to TechFlow</h1>
-              <p className="text-lg text-gray-600">Navigate to different sections using the menu above.</p>
-            </div>
-          </div>
-        );
-    }
-  };
+const AppContent = () => {
+  const location = useLocation();
+  const showNavigation = location.pathname !== "/";
 
   return (
-    <div className="relative min-h-screen bg-white">
-      <Navigation isScrolled={isScrolled} currentPage={currentPage} setCurrentPage={setCurrentPage} />
-      {renderPage()}
+    <div className="relative min-h-screen bg-[#121212]">
+      {showNavigation && <Navigation />}
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/resources" element={<ResourcesPage />} />
+        <Route path="/chatbot" element={<div>Chatbot Page</div>} />
+        <Route path="/chat" element={<div>Chat Page</div>} />
+        <Route path="/tinder" element={<div>Tinder Interface</div>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

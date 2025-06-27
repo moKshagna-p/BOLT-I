@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  BookOpen, 
-  Video, 
-  Download, 
-  FileText, 
-  Code, 
-  Users, 
+import React, { useState, useEffect } from "react";
+import {
+  BookOpen,
+  Video,
+  Download,
+  FileText,
+  Code,
+  Users,
   Search,
   Filter,
   ChevronRight,
@@ -33,301 +33,617 @@ import {
   Building2,
   PieChart,
   Zap,
-  CheckCircle2
-} from 'lucide-react';
+  CheckCircle2,
+  Settings,
+  LineChart,
+} from "lucide-react";
+import styled, { createGlobalStyle } from "styled-components";
+import _ from "lodash";
+import { Link } from "react-router-dom";
+
+// Global styles
+const GlobalStyle = createGlobalStyle`
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fadeInRight {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: rgb(226, 232, 240);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    letter-spacing: -0.025em;
+    opacity: 0;
+    animation: fadeInRight 0.6s ease-out forwards;
+  }
+
+  .section-description {
+    color: rgb(203, 213, 225);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    max-width: 600px;
+    line-height: 1.6;
+    opacity: 0;
+    animation: fadeInRight 0.6s ease-out 0.2s forwards;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .resource-card {
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 1rem;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeInUp 0.5s ease-out forwards;
+  }
+  
+  .resource-card:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: translateY(-0.25rem);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+  
+  .resource-card .resource-icon {
+    color: rgb(192, 132, 252);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.8;
+  }
+
+  .resource-card:hover .resource-icon {
+    color: rgb(216, 180, 254);
+    transform: scale(1.1);
+    opacity: 1;
+  }
+  
+  .resource-card .resource-title {
+    color: rgb(226, 232, 240);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.025em;
+    line-height: 1.4;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .resource-card:hover .resource-title {
+    color: rgb(216, 180, 254);
+  }
+
+  .resource-card .resource-description {
+    color: rgb(203, 213, 225);
+    font-size: 0.95rem;
+    line-height: 1.6;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .resource-card .resource-stat {
+    color: rgb(192, 132, 252);
+    font-weight: 600;
+    opacity: 0.9;
+  }
+  
+  .metric-card {
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+    opacity: 0;
+    transform: scale(0.9);
+    animation: scaleIn 0.6s ease-out forwards;
+  }
+  
+  .metric-card:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  .metric-card .metric-title {
+    color: rgb(226, 232, 240);
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.025em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .metric-card:hover .metric-title {
+    color: rgb(216, 180, 254);
+  }
+
+  .metric-card .metric-value {
+    color: rgb(216, 180, 254);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .section-visible {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.5s ease-out;
+  }
+
+  .section-hidden {
+    opacity: 0;
+    transform: translateY(15px);
+    transition: all 0.5s ease-out;
+  }
+
+  body {
+    background: rgb(18, 18, 18);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(107, 33, 168, 0.1);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(107, 33, 168, 0.3);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 33, 168, 0.4);
+  }
+`;
+
+const StyledSidebar = styled.aside`
+  .nav-button {
+    position: relative;
+    transition: all 0.3s ease;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(107, 33, 168, 0.2);
+    margin-bottom: 0.5rem;
+    border-radius: 0.75rem;
+    transform: translateX(0);
+    backdrop-filter: blur(12px);
+    padding: 0.75rem 1rem;
+  }
+
+  .nav-button:hover {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(107, 33, 168, 0.3);
+    transform: translateX(0.25rem);
+  }
+
+  .nav-button.active {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(107, 33, 168, 0.4);
+    transform: translateX(0.5rem);
+  }
+
+  .nav-button .nav-icon {
+    transition: all 0.3s ease;
+    color: rgb(192, 132, 252);
+    opacity: 0.9;
+  }
+
+  .nav-button:hover .nav-icon,
+  .nav-button.active .nav-icon {
+    color: rgb(216, 180, 254);
+    opacity: 1;
+  }
+
+  .nav-button .nav-text {
+    color: rgb(226, 232, 240);
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.95;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  .nav-button:hover .nav-text,
+  .nav-button.active .nav-text {
+    color: rgb(216, 180, 254);
+    opacity: 1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+`;
+
+// Add styled nav component
+const StyledNav = styled.nav`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(107, 33, 168, 0.2);
+`;
 
 const ResourcesPage: React.FC = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [activeSection, setActiveSection] = useState('entrepreneurs');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [activeSection, setActiveSection] = useState("entrepreneurs");
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [visibleSections, setVisibleSections] = useState<string[]>([]);
 
   // Smooth scroll to section
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      const navHeight = 80; // Navigation bar height
-      const sidebarOffset = 120; // Additional offset for better positioning
-      const elementPosition = element.offsetTop - navHeight - sidebarOffset;
-      
+      const offset = 96; // Adjusted offset to match the header height
+      const elementPosition =
+        element.getBoundingClientRect().top + window.pageYOffset;
+
       window.scrollTo({
-        top: elementPosition,
-        behavior: 'smooth'
+        top: elementPosition - offset,
+        behavior: "smooth",
       });
     }
   };
 
-  // Handle scroll events with improved section detection
+  // Enhanced scroll handling with Intersection Observer
   useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
-      
-      // Get all sections
-      const sections = ['entrepreneurs', 'investors', 'insights', 'education', 'tools', 'networking', 'platform', 'legal'];
-      const scrollPosition = window.scrollY + 300; // Increased offset for better detection
-      
-      let currentSection = 'entrepreneurs'; // Default section
-      
-      // Check each section to find which one is currently in view
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const element = document.getElementById(sections[i]);
-        if (element) {
-          const elementTop = element.offsetTop - 200; // Offset for header
-          
-          if (scrollPosition >= elementTop) {
-            currentSection = sections[i];
-            break;
-          }
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setVisibleSections((prev) => [...prev, entry.target.id]);
         }
-      }
-      
-      // Special handling for when we're at the very bottom of the page
-      const documentHeight = document.documentElement.scrollHeight;
-      const windowHeight = window.innerHeight;
-      const scrollTop = window.scrollY;
-      
-      if (scrollTop + windowHeight >= documentHeight - 100) {
-        currentSection = 'legal'; // Force legal section when near bottom
-      }
-      
-      setActiveSection(currentSection);
+      });
     };
 
-    // Initial call to set active section
-    handleScroll();
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    const observer = new IntersectionObserver(observerCallback, {
+      threshold: 0.1,
+      rootMargin: "-100px",
+    });
+
+    // Observe all sections
+    document.querySelectorAll("section[id]").forEach((section) => {
+      observer.observe(section);
+    });
+
+    return () => observer.disconnect();
   }, []);
 
+  // Update scroll handling
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+
+      // Find the current section with improved accuracy
+      const sections = navigationSections.map((section) => section.id);
+      const scrollPosition = window.scrollY + window.innerHeight / 2;
+
+      // Check if we're at the bottom of the page
+      const isAtBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 100;
+
+      if (isAtBottom) {
+        setActiveSection(sections[sections.length - 1]);
+        return;
+      }
+
+      // Find current section
+      let currentSection = sections[0];
+      sections.forEach((sectionId) => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= window.innerHeight / 2) {
+            currentSection = sectionId;
+          }
+        }
+      });
+
+      if (currentSection !== activeSection) {
+        setActiveSection(currentSection);
+      }
+    };
+
+    const throttledHandleScroll = _.throttle(handleScroll, 100);
+
+    handleScroll(); // Initial call
+    window.addEventListener("scroll", throttledHandleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", throttledHandleScroll);
+  }, [activeSection]);
+
   const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const navigationSections = [
-    { id: 'entrepreneurs', name: 'For Entrepreneurs', icon: Lightbulb, description: 'Startup fundamentals & growth' },
-    { id: 'investors', name: 'For Investors', icon: TrendingUp, description: 'Investment strategies & tools' },
-    { id: 'insights', name: 'Market Intelligence', icon: BarChart3, description: 'Industry data & trends' },
-    { id: 'education', name: 'Educational Content', icon: GraduationCap, description: 'Learning resources' },
-    { id: 'tools', name: 'Tools & Calculators', icon: Calculator, description: 'Financial modeling tools' },
-    { id: 'networking', name: 'Networking & Community', icon: Network, description: 'Events & connections' },
-    { id: 'platform', name: 'Platform Resources', icon: Zap, description: 'Platform guides & tutorials' },
-    { id: 'legal', name: 'Legal & Compliance', icon: Shield, description: 'Regulatory guidance' }
-  ];
-
-  const entrepreneurResources = [
     {
-      title: 'Startup Fundamentals Guide',
-      description: 'Complete business plan templates, pitch deck frameworks, and market research methodologies',
-      type: 'guide',
-      icon: Building2,
-      items: ['Business Plan Templates', 'Pitch Deck Templates', 'Market Research Guides'],
-      downloadCount: '15.2K',
-      rating: 4.9
+      id: "getting-started",
+      name: "Getting Started",
+      icon: Lightbulb,
     },
     {
-      title: 'Legal Resources',
-      description: 'Essential legal guidance for incorporation, equity distribution, and IP protection',
-      type: 'legal',
-      icon: Scale,
-      items: ['Incorporation Guides', 'Equity Distribution', 'IP Basics'],
-      downloadCount: '8.7K',
-      rating: 4.8
-    },
-    {
-      title: 'Funding Stages Explained',
-      description: 'Comprehensive breakdown of pre-seed through Series C funding rounds',
-      type: 'education',
-      icon: DollarSign,
-      items: ['Pre-seed Guide', 'Seed Funding', 'Series A-C Breakdown'],
-      downloadCount: '12.1K',
-      rating: 4.9
-    },
-    {
-      title: 'Valuation Methods & Tools',
-      description: 'Professional valuation frameworks and calculation methodologies',
-      type: 'tool',
-      icon: PieChart,
-      items: ['DCF Models', 'Comparable Analysis', 'Risk Assessment'],
-      downloadCount: '6.3K',
-      rating: 4.7
-    },
-    {
-      title: 'Due Diligence Checklist',
-      description: 'Complete checklist of what investors will request during due diligence',
-      type: 'checklist',
-      icon: CheckCircle2,
-      items: ['Financial Documents', 'Legal Requirements', 'Operational Metrics'],
-      downloadCount: '9.8K',
-      rating: 4.8
-    },
-    {
-      title: 'Pitch Preparation Masterclass',
-      description: 'Advanced storytelling techniques, financial projections, and demo best practices',
-      type: 'video',
-      icon: Play,
-      items: ['Storytelling Framework', 'Financial Modeling', 'Demo Scripts'],
-      downloadCount: '11.4K',
-      rating: 4.9
-    }
-  ];
-
-  const investorResources = [
-    {
-      title: 'Investment Due Diligence Framework',
-      description: 'Systematic approach to evaluating startup investment opportunities',
-      type: 'framework',
+      id: "business-planning",
+      name: "Business Planning",
       icon: Target,
-      items: ['Evaluation Criteria', 'Risk Assessment', 'Decision Matrix'],
-      downloadCount: '7.2K',
-      rating: 4.8
     },
     {
-      title: 'Industry Analysis Reports',
-      description: 'Comprehensive market trends and sector analysis reports',
-      type: 'report',
-      icon: BarChart3,
-      items: ['Market Trends', 'Sector Analysis', 'Growth Projections'],
-      downloadCount: '5.9K',
-      rating: 4.7
+      id: "funding",
+      name: "Funding Resources",
+      icon: DollarSign,
     },
     {
-      title: 'Portfolio Management Best Practices',
-      description: 'Advanced strategies for managing and optimizing investment portfolios',
-      type: 'guide',
+      id: "product-dev",
+      name: "Product Development",
+      icon: Code,
+    },
+    {
+      id: "growth",
+      name: "Growth & Marketing",
+      icon: TrendingUp,
+    },
+    {
+      id: "tools",
+      name: "Tools & Resources",
+      icon: Calculator,
+    },
+    {
+      id: "education",
+      name: "Learning Resources",
+      icon: GraduationCap,
+    },
+    {
+      id: "operations",
+      name: "Operations",
+      icon: Settings,
+    },
+    {
+      id: "legal",
+      name: "Legal & Compliance",
+      icon: Shield,
+    },
+    {
+      id: "community",
+      name: "Community",
+      icon: Users,
+    },
+  ];
+
+  const startupResources = [
+    {
+      title: "Startup Toolkit",
+      description: "Essential tools and templates for launching your startup",
+      type: "toolkit",
       icon: Briefcase,
-      items: ['Portfolio Strategy', 'Risk Management', 'Performance Tracking'],
-      downloadCount: '4.1K',
-      rating: 4.9
+      items: [
+        "Business Plan Template",
+        "Financial Model Template",
+        "Pitch Deck Framework",
+        "Market Research Guide",
+      ],
+      downloadCount: "25.3K",
+      rating: 4.9,
     },
     {
-      title: 'Legal Investment Documents',
-      description: 'Template library for investment agreements and legal documentation',
-      type: 'template',
-      icon: FileText,
-      items: ['Term Sheets', 'Investment Agreements', 'Board Resolutions'],
-      downloadCount: '3.8K',
-      rating: 4.6
-    }
+      title: "Product Development Guide",
+      description: "Best practices for building and launching your MVP",
+      type: "guide",
+      icon: Code,
+      items: [
+        "MVP Development Framework",
+        "User Testing Templates",
+        "Technical Architecture Guide",
+      ],
+      downloadCount: "18.7K",
+      rating: 4.8,
+    },
+    {
+      title: "Growth Marketing Playbook",
+      description:
+        "Proven strategies for sustainable growth and user acquisition",
+      type: "playbook",
+      icon: TrendingUp,
+      items: [
+        "Customer Acquisition Strategy",
+        "Content Marketing Guide",
+        "Analytics Setup Guide",
+      ],
+      downloadCount: "21.2K",
+      rating: 4.9,
+    },
+    {
+      title: "Funding Guide",
+      description:
+        "Complete guide to startup fundraising and investor relations",
+      type: "guide",
+      icon: DollarSign,
+      items: [
+        "Fundraising Strategy",
+        "Investor Pitch Guide",
+        "Term Sheet Guide",
+      ],
+      downloadCount: "19.8K",
+      rating: 4.7,
+    },
+    {
+      title: "Legal Essentials",
+      description: "Key legal documents and compliance guidelines",
+      type: "legal",
+      icon: Shield,
+      items: ["Incorporation Guide", "IP Protection", "Contracts Templates"],
+      downloadCount: "15.4K",
+      rating: 4.8,
+    },
+    {
+      title: "Operations Manual",
+      description: "Streamline your business operations and processes",
+      type: "manual",
+      icon: Settings,
+      items: ["Process Templates", "Team Management", "Tools & Software Guide"],
+      downloadCount: "12.9K",
+      rating: 4.6,
+    },
   ];
 
   const educationalContent = [
     {
-      title: 'Expert Webinar Library',
-      description: 'Recorded sessions with industry leaders and successful entrepreneurs',
-      type: 'video',
-      icon: Video,
-      count: '150+ Sessions',
-      duration: '200+ Hours'
-    },
-    {
-      title: 'Startup Success Podcast',
-      description: 'Weekly interviews with founders, investors, and industry experts',
-      type: 'audio',
-      icon: Play,
-      count: '75 Episodes',
-      duration: '50+ Hours'
-    },
-    {
-      title: 'Interactive Video Tutorials',
-      description: 'Step-by-step platform tutorials and investment education',
-      type: 'tutorial',
+      title: "Founder's Learning Path",
+      description: "Curated courses and workshops for startup founders",
+      type: "courses",
       icon: GraduationCap,
-      count: '40+ Tutorials',
-      duration: '15+ Hours'
-    }
+      count: "50+ Courses",
+      duration: "100+ Hours",
+    },
+    {
+      title: "Expert Webinar Series",
+      description:
+        "Live sessions with successful founders and industry experts",
+      type: "webinars",
+      icon: Video,
+      count: "200+ Sessions",
+      duration: "300+ Hours",
+    },
+    {
+      title: "Startup Case Studies",
+      description: "Real-world examples and lessons from successful startups",
+      type: "case-studies",
+      icon: FileText,
+      count: "100+ Studies",
+      duration: "50+ Hours",
+    },
   ];
 
   const toolsAndCalculators = [
     {
-      title: 'Startup Valuation Calculator',
-      description: 'Advanced DCF and comparable company analysis tool',
+      title: "Financial Modeling Tools",
+      description:
+        "Professional-grade financial planning and forecasting tools",
       icon: Calculator,
-      type: 'calculator'
+      type: "finance",
     },
     {
-      title: 'Equity Dilution Calculator',
-      description: 'Model equity dilution across funding rounds',
+      title: "Market Size Calculator",
+      description: "Calculate TAM, SAM, and SOM for your market",
       icon: PieChart,
-      type: 'calculator'
+      type: "market",
     },
     {
-      title: 'ROI Calculator for Investors',
-      description: 'Calculate potential returns and risk-adjusted metrics',
+      title: "Runway Calculator",
+      description: "Track burn rate and estimate runway",
       icon: TrendingUp,
-      type: 'calculator'
+      type: "finance",
     },
     {
-      title: 'Burn Rate Calculator',
-      description: 'Track cash burn and runway projections',
+      title: "Equity Calculator",
+      description: "Model cap table and equity dilution",
+      icon: Users,
+      type: "finance",
+    },
+    {
+      title: "Unit Economics",
+      description: "Calculate CAC, LTV, and other key metrics",
       icon: BarChart3,
-      type: 'calculator'
+      type: "metrics",
     },
     {
-      title: 'Market Size Calculator',
-      description: 'TAM, SAM, and SOM analysis framework',
-      icon: Target,
-      type: 'calculator'
+      title: "Growth Metrics",
+      description: "Track and forecast key growth metrics",
+      icon: LineChart,
+      type: "metrics",
     },
-    {
-      title: 'Cap Table Management',
-      description: 'Professional cap table modeling and scenario planning',
-      icon: FileText,
-      type: 'tool'
-    }
   ];
 
-  const ResourceCard = ({ resource, index }: { resource: any; index: number }) => {
+  const ResourceCard = ({
+    resource,
+    index,
+  }: {
+    resource: any;
+    index: number;
+  }) => {
     const Icon = resource.icon;
-    
     return (
-      <div 
-        className="bg-white rounded-2xl border border-[#e5e7eb] p-6 hover:shadow-xl hover:border-[#f59e0b]/20 transition-all duration-300 group cursor-pointer transform hover:-translate-y-1"
-        style={{ animationDelay: `${index * 100}ms` }}
+      <div
+        className="resource-card group"
+        style={{
+          animationDelay: `${index * 100}ms`,
+          background: "rgba(0, 0, 0, 0.4)",
+          backdropFilter: "blur(10px)",
+        }}
       >
         <div className="flex items-start justify-between mb-4">
-          <div className="p-3 bg-[#fffbeb] rounded-xl">
-            <Icon className="w-6 h-6 text-[#f59e0b]" />
+          <div className="p-3 bg-purple-900/30 rounded-xl">
+            <Icon className="resource-icon w-6 h-6 text-purple-300 transition-all duration-300" />
           </div>
           {resource.rating && (
-            <div className="flex items-center text-sm text-[#6b7280]">
-              <Star className="w-4 h-4 mr-1 text-[#f59e0b] fill-current" />
-              {resource.rating}
+            <div className="flex items-center text-sm text-purple-300">
+              <Star className="w-4 h-4 mr-1 text-purple-400 fill-current" />
+              <span className="font-semibold">{resource.rating}</span>
             </div>
           )}
         </div>
-        
-        <h3 className="text-lg font-semibold text-[#262626] mb-2 group-hover:text-[#f59e0b] transition-colors duration-200">
+
+        <h3 className="text-xl font-semibold text-gray-100 mb-2 group-hover:text-purple-300 transition-colors">
           {resource.title}
         </h3>
-        <p className="text-[#6b7280] text-sm mb-4 leading-relaxed">
+        <p className="text-gray-300 text-sm leading-relaxed mb-4">
           {resource.description}
         </p>
-        
+
         {resource.items && (
           <div className="space-y-2 mb-4">
-            {resource.items.slice(0, 3).map((item: string, idx: number) => (
-              <div key={idx} className="flex items-center text-xs text-[#4b5563]">
-                <CheckCircle2 className="w-3 h-3 mr-2 text-[#f59e0b]" />
+            {resource.items.map((item: string, idx: number) => (
+              <div
+                key={idx}
+                className="flex items-center text-sm text-gray-300"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2 text-purple-400" />
                 {item}
               </div>
             ))}
           </div>
         )}
-        
-        <div className="flex items-center justify-between pt-4 border-t border-[#f3f4f6]">
+
+        <div className="flex items-center justify-between pt-4 border-t border-purple-900/30">
           {resource.downloadCount && (
-            <div className="flex items-center text-xs text-[#6b7280]">
-              <Download className="w-3 h-3 mr-1" />
+            <div className="flex items-center text-sm text-purple-300">
+              <Download className="w-4 h-4 mr-1" />
               {resource.downloadCount} downloads
             </div>
           )}
-          {resource.count && (
-            <div className="text-xs text-[#6b7280]">
-              {resource.count}
-            </div>
-          )}
-          <ChevronRight className="w-4 h-4 text-[#6b7280] group-hover:text-[#f59e0b] group-hover:translate-x-1 transition-all duration-200" />
+          <ChevronRight className="w-5 h-5 text-purple-400 group-hover:translate-x-1 transition-transform duration-300" />
         </div>
       </div>
     );
@@ -335,346 +651,701 @@ const ResourcesPage: React.FC = () => {
 
   const ToolCard = ({ tool, index }: { tool: any; index: number }) => {
     const Icon = tool.icon;
-    
     return (
-      <div 
-        className="bg-white rounded-xl border border-[#e5e7eb] p-6 hover:shadow-lg hover:border-[#f59e0b]/20 transition-all duration-300 group cursor-pointer"
+      <div
+        className="metric-card"
         style={{ animationDelay: `${index * 50}ms` }}
       >
         <div className="flex items-center mb-3">
-          <div className="p-2 bg-[#fffbeb] rounded-lg mr-3">
-            <Icon className="w-5 h-5 text-[#f59e0b]" />
+          <div className="p-2 bg-purple-900/30 rounded-lg mr-3">
+            <Icon className="w-5 h-5 text-purple-300" />
           </div>
-          <span className="text-xs bg-[#f3f4f6] text-[#6b7280] px-2 py-1 rounded-full">
+          <span className="text-xs bg-purple-900/30 text-purple-300 px-2 py-1 rounded-full">
             {tool.type}
           </span>
         </div>
-        <h4 className="font-semibold text-[#262626] mb-2 group-hover:text-[#f59e0b] transition-colors duration-200">
-          {tool.title}
-        </h4>
-        <p className="text-sm text-[#6b7280] leading-relaxed">
-          {tool.description}
-        </p>
+        <h4 className="metric-title">{tool.title}</h4>
+        <p className="resource-description">{tool.description}</p>
       </div>
     );
   };
 
+  // Additional resource sections data
+  const businessPlanningResources = [
+    {
+      title: "Market Research Kit",
+      description: "Comprehensive tools for market analysis and validation",
+      type: "research",
+      icon: Target,
+      items: [
+        "Industry Analysis Templates",
+        "Competitor Research Framework",
+        "Market Size Calculator",
+      ],
+      downloadCount: "18.2K",
+      rating: 4.7,
+    },
+    {
+      title: "Business Model Canvas",
+      description: "Interactive templates for business model development",
+      type: "planning",
+      icon: PieChart,
+      items: [
+        "Value Proposition Canvas",
+        "Revenue Model Templates",
+        "Cost Structure Analysis",
+      ],
+      downloadCount: "22.1K",
+      rating: 4.8,
+    },
+    {
+      title: "Strategic Planning Tools",
+      description: "Tools for long-term business strategy development",
+      type: "strategy",
+      icon: Target,
+      items: [
+        "SWOT Analysis Template",
+        "OKR Framework",
+        "Strategic Roadmap Builder",
+      ],
+      downloadCount: "16.9K",
+      rating: 4.6,
+    },
+  ];
+
+  const fundingResources = [
+    {
+      title: "Investor Pitch Kit",
+      description: "Complete toolkit for fundraising preparation",
+      type: "pitch",
+      icon: DollarSign,
+      items: [
+        "Pitch Deck Templates",
+        "Financial Projections",
+        "Valuation Tools",
+        "Term Sheet Guide",
+      ],
+      downloadCount: "28.4K",
+      rating: 4.9,
+    },
+    {
+      title: "Due Diligence Checklist",
+      description: "Comprehensive checklist for investment readiness",
+      type: "checklist",
+      icon: CheckCircle2,
+      items: ["Legal Documentation", "Financial Records", "IP Verification"],
+      downloadCount: "15.7K",
+      rating: 4.7,
+    },
+    {
+      title: "Funding Options Guide",
+      description: "Overview of different funding sources and strategies",
+      type: "guide",
+      icon: BookOpen,
+      items: ["VC Funding Guide", "Angel Investment", "Crowdfunding Strategy"],
+      downloadCount: "19.3K",
+      rating: 4.8,
+    },
+  ];
+
+  const productDevResources = [
+    {
+      title: "Technical Architecture",
+      description: "Templates and guides for system architecture",
+      type: "technical",
+      icon: Code,
+      items: [
+        "Architecture Patterns",
+        "Scalability Guide",
+        "Security Best Practices",
+      ],
+      downloadCount: "23.1K",
+      rating: 4.8,
+    },
+    {
+      title: "UI/UX Design Kit",
+      description: "Design resources and guidelines for product development",
+      type: "design",
+      icon: Lightbulb,
+      items: ["Design System", "Component Library", "Usability Guidelines"],
+      downloadCount: "26.8K",
+      rating: 4.9,
+    },
+    {
+      title: "Development Workflow",
+      description: "Best practices for development and deployment",
+      type: "workflow",
+      icon: Settings,
+      items: ["CI/CD Templates", "Code Review Guidelines", "Testing Framework"],
+      downloadCount: "20.5K",
+      rating: 4.7,
+    },
+  ];
+
+  const growthResources = [
+    {
+      title: "Growth Marketing Toolkit",
+      description: "Complete toolkit for growth and user acquisition",
+      type: "marketing",
+      icon: TrendingUp,
+      items: [
+        "Customer Acquisition Framework",
+        "Growth Metrics Dashboard",
+        "Marketing Channel Guide",
+      ],
+      downloadCount: "24.7K",
+      rating: 4.8,
+    },
+    {
+      title: "Content Strategy Kit",
+      description: "Resources for content marketing and SEO",
+      type: "content",
+      icon: FileText,
+      items: [
+        "Content Calendar Template",
+        "SEO Best Practices",
+        "Social Media Strategy",
+      ],
+      downloadCount: "21.3K",
+      rating: 4.7,
+    },
+    {
+      title: "Analytics Dashboard",
+      description: "Templates for tracking growth metrics",
+      type: "analytics",
+      icon: BarChart3,
+      items: [
+        "KPI Dashboard",
+        "Conversion Funnel Analysis",
+        "User Behavior Tracking",
+      ],
+      downloadCount: "19.8K",
+      rating: 4.9,
+    },
+  ];
+
+  const operationsResources = [
+    {
+      title: "Operations Playbook",
+      description: "Comprehensive guide for business operations",
+      type: "operations",
+      icon: Settings,
+      items: [
+        "Process Documentation",
+        "Team Management",
+        "Resource Allocation",
+      ],
+      downloadCount: "17.5K",
+      rating: 4.6,
+    },
+    {
+      title: "HR & Culture Kit",
+      description: "Tools for building great company culture",
+      type: "culture",
+      icon: Users,
+      items: ["Hiring Templates", "Onboarding Checklist", "Culture Framework"],
+      downloadCount: "16.2K",
+      rating: 4.8,
+    },
+    {
+      title: "Finance Management",
+      description: "Financial planning and management tools",
+      type: "finance",
+      icon: DollarSign,
+      items: [
+        "Budget Templates",
+        "Cash Flow Management",
+        "Financial Reporting",
+      ],
+      downloadCount: "20.1K",
+      rating: 4.7,
+    },
+  ];
+
+  const communityResources = [
+    {
+      title: "Networking Guide",
+      description: "Resources for building professional networks",
+      type: "networking",
+      icon: Users,
+      items: [
+        "Event Planning Kit",
+        "Community Building Guide",
+        "Partnership Strategy",
+      ],
+      downloadCount: "15.8K",
+      rating: 4.7,
+    },
+    {
+      title: "Mentorship Program",
+      description: "Framework for mentorship and knowledge sharing",
+      type: "mentorship",
+      icon: GraduationCap,
+      items: ["Mentor Matching System", "Knowledge Base", "Success Stories"],
+      downloadCount: "14.3K",
+      rating: 4.8,
+    },
+    {
+      title: "Collaboration Tools",
+      description: "Resources for team collaboration",
+      type: "collaboration",
+      icon: Network,
+      items: [
+        "Project Management Templates",
+        "Communication Guidelines",
+        "Remote Work Tools",
+      ],
+      downloadCount: "18.9K",
+      rating: 4.6,
+    },
+  ];
+
   return (
-    <div className="pt-20 min-h-screen bg-[#ffffff]">
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Sticky Navigation Sidebar */}
-          <aside className="w-80 flex-shrink-0">
-            <div className="sticky top-28">
-              <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-[#262626] mb-6">Navigate Resources</h3>
-                <nav className="space-y-2">
-                  {navigationSections.map((section) => {
-                    const Icon = section.icon;
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => scrollToSection(section.id)}
-                        className={`w-full flex items-start px-4 py-3 rounded-xl text-left transition-all duration-200 ${
-                          activeSection === section.id
-                            ? 'bg-[#fffbeb] text-[#f59e0b] border border-[#f59e0b]/20'
-                            : 'text-[#4b5563] hover:bg-[#f9fafb] hover:text-[#262626]'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="font-medium">{section.name}</div>
-                          <div className="text-xs text-[#6b7280] mt-1">{section.description}</div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
+    <>
+      <StyledNav>
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center space-x-2">
+                <Zap className="w-6 h-6 text-purple-500" />
+                <span className="text-xl font-semibold text-gray-100">
+                  TechFlow
+                </span>
+              </Link>
             </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            {/* For Entrepreneurs Section */}
-            <section id="entrepreneurs" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <Lightbulb className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">For Entrepreneurs & Startups</h2>
-                  <p className="text-[#6b7280] mt-2">Essential resources to build, fund, and scale your startup</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {entrepreneurResources.map((resource, index) => (
-                  <ResourceCard key={index} resource={resource} index={index} />
-                ))}
-              </div>
-            </section>
-
-            {/* For Investors Section */}
-            <section id="investors" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <TrendingUp className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">For Investors</h2>
-                  <p className="text-[#6b7280] mt-2">Professional tools and insights for smart investment decisions</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-                {investorResources.map((resource, index) => (
-                  <ResourceCard key={index} resource={resource} index={index} />
-                ))}
-              </div>
-            </section>
-
-            {/* Market Intelligence Section */}
-            <section id="insights" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <BarChart3 className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Industry Insights & Market Intelligence</h2>
-                  <p className="text-[#6b7280] mt-2">Data-driven insights and market analysis</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-8 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center mb-4">
-                    <Award className="w-6 h-6 text-[#f59e0b] mr-3" />
-                    <h3 className="text-xl font-semibold text-[#262626]">Success Statistics</h3>
-                  </div>
-                  <p className="text-[#6b7280] mb-4">Comprehensive analysis of startup success rates by industry, funding stage, and geography.</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">SaaS Success Rate</span>
-                      <span className="font-semibold text-[#f59e0b]">23%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">E-commerce Success Rate</span>
-                      <span className="font-semibold text-[#f59e0b]">18%</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">FinTech Success Rate</span>
-                      <span className="font-semibold text-[#f59e0b]">15%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-8 hover:shadow-lg transition-all duration-300">
-                  <div className="flex items-center mb-4">
-                    <Globe className="w-6 h-6 text-[#f59e0b] mr-3" />
-                    <h3 className="text-xl font-semibold text-[#262626]">Regional Ecosystems</h3>
-                  </div>
-                  <p className="text-[#6b7280] mb-4">In-depth analysis of startup ecosystems across major global markets.</p>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">Silicon Valley</span>
-                      <span className="font-semibold text-[#f59e0b]">$156B</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">New York</span>
-                      <span className="font-semibold text-[#f59e0b]">$42B</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-[#4b5563]">London</span>
-                      <span className="font-semibold text-[#f59e0b]">$28B</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Educational Content Section */}
-            <section id="education" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <GraduationCap className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Educational Content</h2>
-                  <p className="text-[#6b7280] mt-2">Learn from industry experts and successful entrepreneurs</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-3">
-                {educationalContent.map((content, index) => (
-                  <div key={index} className="bg-white rounded-2xl border border-[#e5e7eb] p-6 hover:shadow-lg transition-all duration-300 group cursor-pointer">
-                    <div className="p-4 bg-[#fffbeb] rounded-xl mb-4 w-fit">
-                      <content.icon className="w-8 h-8 text-[#f59e0b]" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-[#262626] mb-2 group-hover:text-[#f59e0b] transition-colors duration-200">
-                      {content.title}
-                    </h3>
-                    <p className="text-[#6b7280] mb-4">{content.description}</p>
-                    <div className="flex justify-between text-sm text-[#4b5563]">
-                      <span>{content.count}</span>
-                      <span>{content.duration}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Tools & Calculators Section */}
-            <section id="tools" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <Calculator className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Tools & Calculators</h2>
-                  <p className="text-[#6b7280] mt-2">Professional-grade tools for financial modeling and analysis</p>
-                </div>
-              </div>
-              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                {toolsAndCalculators.map((tool, index) => (
-                  <ToolCard key={index} tool={tool} index={index} />
-                ))}
-              </div>
-            </section>
-
-            {/* Networking & Community Section */}
-            <section id="networking" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <Network className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Networking & Community</h2>
-                  <p className="text-[#6b7280] mt-2">Connect with peers, mentors, and industry leaders</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-8">
-                  <Calendar className="w-8 h-8 text-[#f59e0b] mb-4" />
-                  <h3 className="text-xl font-semibold text-[#262626] mb-2">Upcoming Events</h3>
-                  <p className="text-[#6b7280] mb-4">Join pitch events, networking meetups, and industry conferences.</p>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-[#f3f4f6]">
-                      <span className="text-[#4b5563]">Startup Pitch Night</span>
-                      <span className="text-sm text-[#f59e0b] font-medium">Dec 15</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b border-[#f3f4f6]">
-                      <span className="text-[#4b5563]">Investor Meetup</span>
-                      <span className="text-sm text-[#f59e0b] font-medium">Dec 22</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-8">
-                  <Users className="w-8 h-8 text-[#f59e0b] mb-4" />
-                  <h3 className="text-xl font-semibold text-[#262626] mb-2">Mentorship Program</h3>
-                  <p className="text-[#6b7280] mb-4">Get matched with experienced entrepreneurs and investors.</p>
-                  <div className="bg-[#fffbeb] rounded-lg p-4">
-                    <div className="text-2xl font-bold text-[#f59e0b] mb-1">500+</div>
-                    <div className="text-[#6b7280] text-sm">Active Mentors</div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Platform Resources Section */}
-            <section id="platform" className="mb-20 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <Zap className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Platform-Specific Resources</h2>
-                  <p className="text-[#6b7280] mt-2">Master our platform with comprehensive guides and tutorials</p>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl border border-[#e5e7eb] p-8">
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#262626] mb-4">Getting Started</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Platform Overview & Navigation
-                      </div>
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Creating Your Startup Profile
-                      </div>
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Investor Search & Outreach
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-[#262626] mb-4">Advanced Features</h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Analytics Dashboard Guide
-                      </div>
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Deal Room Management
-                      </div>
-                      <div className="flex items-center text-[#4b5563]">
-                        <CheckCircle2 className="w-4 h-4 mr-3 text-[#f59e0b]" />
-                        Communication Best Practices
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Legal & Compliance Section */}
-            <section id="legal" className="mb-32 scroll-mt-32">
-              <div className="flex items-center mb-8">
-                <div className="p-3 bg-[#fffbeb] rounded-xl mr-4">
-                  <Shield className="w-8 h-8 text-[#f59e0b]" />
-                </div>
-                <div>
-                  <h2 className="text-3xl font-bold text-[#262626]">Legal & Compliance</h2>
-                  <p className="text-[#6b7280] mt-2">Navigate regulatory requirements and legal considerations</p>
-                </div>
-              </div>
-              <div className="grid gap-6 lg:grid-cols-2">
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
-                  <Scale className="w-6 h-6 text-[#f59e0b] mb-4" />
-                  <h3 className="text-lg font-semibold text-[#262626] mb-2">Regulatory Guidelines</h3>
-                  <p className="text-[#6b7280] mb-4">Comprehensive guides for different regulatory environments.</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="text-[#4b5563]">• SEC Regulations (US)</div>
-                    <div className="text-[#4b5563]">• FCA Guidelines (UK)</div>
-                    <div className="text-[#4b5563]">• ESMA Rules (EU)</div>
-                  </div>
-                </div>
-                <div className="bg-white rounded-2xl border border-[#e5e7eb] p-6">
-                  <Globe className="w-6 h-6 text-[#f59e0b] mb-4" />
-                  <h3 className="text-lg font-semibold text-[#262626] mb-2">International Considerations</h3>
-                  <p className="text-[#6b7280] mb-4">Cross-border investment laws and compliance requirements.</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="text-[#4b5563]">• Tax Implications</div>
-                    <div className="text-[#4b5563]">• Currency Regulations</div>
-                    <div className="text-[#4b5563]">• Reporting Requirements</div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </main>
+            <div className="hidden md:flex items-center space-x-8">
+              <Link
+                to="/analytics"
+                className="text-gray-300 hover:text-purple-400 transition-colors"
+              >
+                Analytics
+              </Link>
+              <Link
+                to="/chatbot"
+                className="text-gray-300 hover:text-purple-400 transition-colors"
+              >
+                Chatbot
+              </Link>
+              <Link to="/resources" className="text-purple-400 font-medium">
+                Resources
+              </Link>
+              <Link
+                to="/chat"
+                className="text-gray-300 hover:text-purple-400 transition-colors"
+              >
+                Chat
+              </Link>
+              <Link
+                to="/tinder"
+                className="text-gray-300 hover:text-purple-400 transition-colors"
+              >
+                Tinder-style interface
+              </Link>
+            </div>
+          </div>
         </div>
-      </div>
+      </StyledNav>
+      <div className="pt-20 min-h-screen bg-[#121212] relative overflow-hidden">
+        {/* Main purple gradient beam */}
+        <div
+          className="absolute inset-0 rotate-45 opacity-40"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, #6B21A8 50%, transparent 100%)",
+            filter: "blur(80px)",
+            transform: "translateY(-50%) rotate(-45deg) scale(2)",
+          }}
+        />
+        {/* Subtle overlay for depth */}
+        <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px]" />
 
-      {/* Back to Top Button */}
-      {showBackToTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-8 right-8 p-4 bg-[#f59e0b] text-white rounded-full shadow-lg hover:bg-[#d97706] transition-all duration-300 transform hover:scale-110 z-50"
-        >
-          <ArrowUp className="w-5 h-5" />
-        </button>
-      )}
-    </div>
+        {/* Content wrapper */}
+        <div className="relative z-10">
+          <GlobalStyle />
+          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+            <div className="flex gap-8">
+              {/* Sticky Navigation Sidebar */}
+              <StyledSidebar className="hidden lg:block w-72 flex-shrink-0">
+                <div className="fixed w-72 pt-24 pb-8">
+                  <div className="bg-[#121212]/80 rounded-xl border border-purple-900/20 p-4 shadow-lg backdrop-blur-sm">
+                    <h3 className="text-lg font-semibold text-gray-100 mb-4 opacity-90 px-2">
+                      Resource Categories
+                    </h3>
+                    <nav className="space-y-2 max-h-[calc(100vh-180px)] overflow-y-auto pr-2 custom-scrollbar">
+                      {navigationSections.map((section) => {
+                        const Icon = section.icon;
+                        return (
+                          <button
+                            key={section.id}
+                            onClick={() => scrollToSection(section.id)}
+                            className={`nav-button w-full flex items-center text-left ${
+                              activeSection === section.id ? "active" : ""
+                            }`}
+                          >
+                            <Icon className="nav-icon w-5 h-5 mr-3 flex-shrink-0" />
+                            <span className="nav-text">{section.name}</span>
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                </div>
+              </StyledSidebar>
+
+              {/* Main Content */}
+              <main className="flex-1 space-y-20">
+                {/* Getting Started Section */}
+                <section
+                  id="getting-started"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("getting-started")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Lightbulb className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Getting Started</h2>
+                      <p className="section-description">
+                        Essential resources and guides to help you start your
+                        journey
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {startupResources.slice(0, 3).map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Business Planning Section */}
+                <section
+                  id="business-planning"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("business-planning")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Target className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Business Planning</h2>
+                      <p className="section-description">
+                        Strategic tools and frameworks for business development
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {businessPlanningResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Funding Section */}
+                <section
+                  id="funding"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("funding")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <DollarSign className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Funding Resources</h2>
+                      <p className="section-description">
+                        Essential tools and guides for startup fundraising
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {fundingResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Product Development Section */}
+                <section
+                  id="product-dev"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("product-dev")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Code className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Product Development</h2>
+                      <p className="section-description">
+                        Technical resources and best practices for building
+                        great products
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {productDevResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Growth & Marketing Section */}
+                <section
+                  id="growth"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("growth")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <TrendingUp className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Growth & Marketing</h2>
+                      <p className="section-description">
+                        Tools and strategies for sustainable business growth
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {growthResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Tools & Resources Section */}
+                <section
+                  id="tools"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("tools")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Calculator className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Tools & Resources</h2>
+                      <p className="section-description">
+                        Professional tools to help you make informed decisions
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                    {toolsAndCalculators.map((tool, index) => (
+                      <ToolCard key={index} tool={tool} index={index} />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Learning Resources Section */}
+                <section
+                  id="education"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("education")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <GraduationCap className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Learning Resources</h2>
+                      <p className="section-description">
+                        Expand your knowledge with our curated educational
+                        content
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-3">
+                    {educationalContent.map((content, index) => (
+                      <div
+                        key={index}
+                        className="resource-card group"
+                        style={{
+                          animationDelay: `${index * 100}ms`,
+                          background: "rgba(0, 0, 0, 0.4)",
+                          backdropFilter: "blur(10px)",
+                        }}
+                      >
+                        <div className="p-3 bg-purple-900/30 rounded-xl mb-4">
+                          <content.icon className="w-6 h-6 text-purple-300 transition-all duration-300" />
+                        </div>
+                        <h3 className="text-xl font-semibold text-gray-100 mb-2 group-hover:text-purple-300 transition-colors">
+                          {content.title}
+                        </h3>
+                        <p className="text-gray-300 text-sm leading-relaxed mb-4">
+                          {content.description}
+                        </p>
+                        <div className="flex justify-between text-sm mt-4 pt-4 border-t border-purple-900/30">
+                          <span className="text-purple-300">
+                            {content.count}
+                          </span>
+                          <span className="text-purple-300">
+                            {content.duration}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Operations Section */}
+                <section
+                  id="operations"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("operations")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Settings className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Operations</h2>
+                      <p className="section-description">
+                        Resources for efficient business operations and
+                        management
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {operationsResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Legal & Compliance Section */}
+                <section
+                  id="legal"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("legal")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Shield className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Legal & Compliance</h2>
+                      <p className="section-description">
+                        Essential legal resources and compliance guides
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    {startupResources.slice(4, 6).map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Community Section */}
+                <section
+                  id="community"
+                  className={`scroll-mt-32 transition-all duration-500 ease-out ${
+                    visibleSections.includes("community")
+                      ? "section-visible"
+                      : "section-hidden"
+                  }`}
+                >
+                  <div className="flex items-center mb-8">
+                    <div className="p-3 bg-purple-900/30 rounded-xl mr-4">
+                      <Users className="w-8 h-8 text-purple-300" />
+                    </div>
+                    <div>
+                      <h2 className="section-title">Community</h2>
+                      <p className="section-description">
+                        Connect and grow with the startup community
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                    {communityResources.map((resource, index) => (
+                      <ResourceCard
+                        key={index}
+                        resource={resource}
+                        index={index}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </main>
+            </div>
+          </div>
+        </div>
+
+        {/* Back to Top Button with improved animation */}
+        {showBackToTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-8 right-8 p-4 bg-black/80 text-purple-300 rounded-full shadow-lg 
+                     hover:bg-black hover:text-purple-400 transition-all duration-300 transform 
+                     hover:scale-110 z-50 border border-purple-900/20 animate-fadeIn"
+            style={{
+              animation: "fadeInUp 0.3s ease-out forwards",
+            }}
+          >
+            <ArrowUp className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+    </>
   );
 };
 
