@@ -449,6 +449,202 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/user/role - Store user role selection
+app.post('/api/user/role', authenticateToken, async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!role || !['startup', 'investor'].includes(role)) {
+      return res.status(400).json({ error: 'Valid role is required (startup or investor)' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Update user with role
+    const result = await database.collection('users').updateOne(
+      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { 
+        $set: { 
+          role: role,
+          roleUpdatedAt: new Date().toISOString()
+        } 
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Role updated successfully',
+      role: role
+    });
+
+  } catch (error) {
+    console.error('Role update error:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+});
+
+// POST /api/user/startup-details - Store startup details
+app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
+  try {
+    const {
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize,
+      monthlyRevenue,
+      fundingNeeded,
+      website,
+      location
+    } = req.body;
+
+    if (!companyName || !industry || !stage || !description) {
+      return res.status(400).json({ error: 'Required fields: companyName, industry, stage, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Create or update startup profile
+    const startupData = {
+      userId: req.user.userId,
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize: teamSize || null,
+      monthlyRevenue: monthlyRevenue || null,
+      fundingNeeded: fundingNeeded || null,
+      website: website || null,
+      location: location || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('startup_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: startupData },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Startup details saved successfully',
+      profileId: result.upsertedId || 'updated'
+    });
+
+  } catch (error) {
+    console.error('Startup details save error:', error);
+    res.status(500).json({ error: 'Failed to save startup details' });
+  }
+});
+
+// POST /api/user/investor-details - Store investor details
+app.post('/api/user/investor-details', authenticateToken, async (req, res) => {
+  try {
+    const {
+      fullName,
+      company,
+      role,
+      portfolioSize,
+      investmentFocus,
+      preferredStages,
+      description,
+      website,
+      location,
+      linkedin
+    } = req.body;
+
+    if (!fullName || !investmentFocus || !description) {
+      return res.status(400).json({ error: 'Required fields: fullName, investmentFocus, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Create or update investor profile
+    const investorData = {
+      userId: req.user.userId,
+      fullName,
+      company: company || null,
+      role: role || null,
+      portfolioSize: portfolioSize || null,
+      investmentFocus,
+      preferredStages: preferredStages || null,
+      description,
+      website: website || null,
+      location: location || null,
+      linkedin: linkedin || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('investor_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: investorData },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Investor details saved successfully',
+      profileId: result.upsertedId || 'updated'
+    });
+
+  } catch (error) {
+    console.error('Investor details save error:', error);
+    res.status(500).json({ error: 'Failed to save investor details' });
+  }
+});
+
+// GET /api/user/profile - Get user profile data
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    // Get user with role
+    const user = await database.collection('users').findOne(
+      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { projection: { password: 0 } }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let profileData = null;
+
+    // Get role-specific profile data
+    if (user.role === 'startup') {
+      profileData = await database.collection('startup_profiles').findOne(
+        { userId: req.user.userId }
+      );
+    } else if (user.role === 'investor') {
+      profileData = await database.collection('investor_profiles').findOne(
+        { userId: req.user.userId }
+      );
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      },
+      profile: profileData
+    });
+
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Failed to get user profile' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 }); 

@@ -164,8 +164,12 @@ const LoginSignupPage: React.FC = () => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Navigate to analytics page
-      navigate("/analytics");
+      // Navigate based on action type
+      if (mode === "signup") {
+        navigate("/role-selection");
+      } else {
+        navigate("/analytics");
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
