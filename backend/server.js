@@ -6,6 +6,8 @@ const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fetch = require('node-fetch'); // For Node.js < 18
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -287,6 +289,360 @@ app.post('/api/elevenlabs-tts', async (req, res) => {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// ===== Authentication Endpoints =====
+
+// POST /api/auth/signup
+app.post('/api/auth/signup', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Check if user already exists
+    const existingUser = await database.collection('users').findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists with this email' });
+    }
+
+    // Hash password
+    const saltRounds = 12;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    // Create user
+    const user = {
+      email,
+      password: hashedPassword,
+      createdAt: new Date().toISOString(),
+      lastLogin: null
+    };
+
+    const result = await database.collection('users').insertOne(user);
+    
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: result.insertedId, email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      token,
+      user: {
+        id: result.insertedId,
+        email: user.email,
+        createdAt: user.createdAt
+      }
+    });
+
+  } catch (error) {
+    console.error('Signup error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// POST /api/auth/login
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Find user
+    const user = await database.collection('users').findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Update last login
+    await database.collection('users').updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date().toISOString() } }
+    );
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { userId: user._id, email: user.email },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Failed to login' });
+  }
+});
+
+// Middleware to verify JWT token
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user;
+    next();
+  });
+};
+
+// Protected route example
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    const user = await database.collection('users').findOne(
+      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { projection: { password: 0 } }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }
+    });
+
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user data' });
+  }
+});
+
+// POST /api/user/role - Store user role selection
+app.post('/api/user/role', authenticateToken, async (req, res) => {
+  try {
+    const { role } = req.body;
+    
+    if (!role || !['startup', 'investor'].includes(role)) {
+      return res.status(400).json({ error: 'Valid role is required (startup or investor)' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Update user with role
+    const result = await database.collection('users').updateOne(
+      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { 
+        $set: { 
+          role: role,
+          roleUpdatedAt: new Date().toISOString()
+        } 
+      }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Role updated successfully',
+      role: role
+    });
+
+  } catch (error) {
+    console.error('Role update error:', error);
+    res.status(500).json({ error: 'Failed to update user role' });
+  }
+});
+
+// POST /api/user/startup-details - Store startup details
+app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
+  try {
+    const {
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize,
+      monthlyRevenue,
+      fundingNeeded,
+      website,
+      location
+    } = req.body;
+
+    if (!companyName || !industry || !stage || !description) {
+      return res.status(400).json({ error: 'Required fields: companyName, industry, stage, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Create or update startup profile
+    const startupData = {
+      userId: req.user.userId,
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize: teamSize || null,
+      monthlyRevenue: monthlyRevenue || null,
+      fundingNeeded: fundingNeeded || null,
+      website: website || null,
+      location: location || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('startup_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: startupData },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Startup details saved successfully',
+      profileId: result.upsertedId || 'updated'
+    });
+
+  } catch (error) {
+    console.error('Startup details save error:', error);
+    res.status(500).json({ error: 'Failed to save startup details' });
+  }
+});
+
+// POST /api/user/investor-details - Store investor details
+app.post('/api/user/investor-details', authenticateToken, async (req, res) => {
+  try {
+    const {
+      fullName,
+      company,
+      role,
+      portfolioSize,
+      investmentFocus,
+      preferredStages,
+      description,
+      website,
+      location,
+      linkedin
+    } = req.body;
+
+    if (!fullName || !investmentFocus || !description) {
+      return res.status(400).json({ error: 'Required fields: fullName, investmentFocus, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    // Create or update investor profile
+    const investorData = {
+      userId: req.user.userId,
+      fullName,
+      company: company || null,
+      role: role || null,
+      portfolioSize: portfolioSize || null,
+      investmentFocus,
+      preferredStages: preferredStages || null,
+      description,
+      website: website || null,
+      location: location || null,
+      linkedin: linkedin || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('investor_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: investorData },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Investor details saved successfully',
+      profileId: result.upsertedId || 'updated'
+    });
+
+  } catch (error) {
+    console.error('Investor details save error:', error);
+    res.status(500).json({ error: 'Failed to save investor details' });
+  }
+});
+
+// GET /api/user/profile - Get user profile data
+app.get('/api/user/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    // Get user with role
+    const user = await database.collection('users').findOne(
+      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { projection: { password: 0 } }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    let profileData = null;
+
+    // Get role-specific profile data
+    if (user.role === 'startup') {
+      profileData = await database.collection('startup_profiles').findOne(
+        { userId: req.user.userId }
+      );
+    } else if (user.role === 'investor') {
+      profileData = await database.collection('investor_profiles').findOne(
+        { userId: req.user.userId }
+      );
+    }
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      },
+      profile: profileData
+    });
+
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: 'Failed to get user profile' });
+  }
 });
 
 app.listen(PORT, () => {
