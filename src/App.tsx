@@ -13,10 +13,11 @@ import AnalyticsPage from "./components/AnalyticsPage";
 import LandingPage from "./components/LandingPage";
 import ChatPage from "./components/ChatPage";
 import PageTransition from "./components/PageTransition";
+import LoginSignupPage from "./components/LoginSignupPage";
 
 const AppContent = () => {
   const location = useLocation();
-  const showNavigation = location.pathname !== "/";
+  const showNavigation = location.pathname !== "/" && location.pathname !== "/login" && location.pathname !== "/signup";
 
   return (
     <div className="relative min-h-screen bg-[#121212]">
@@ -28,6 +29,22 @@ const AppContent = () => {
             element={
               <PageTransition>
                 <LandingPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <PageTransition>
+                <LoginSignupPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PageTransition>
+                <LoginSignupPage />
               </PageTransition>
             }
           />
