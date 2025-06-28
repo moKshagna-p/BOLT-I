@@ -1,8 +1,42 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Mic, MicOff, Volume2, VolumeX, Database } from 'lucide-react';
 
-const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
-  const [messages, setMessages] = useState([
+// Type declarations for SpeechRecognition
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
+interface Message {
+  id: number;
+  type: 'bot' | 'user';
+  content: string;
+  timestamp: Date;
+}
+
+interface BusinessData {
+  companyName: string;
+  industry: string;
+  stage: string;
+  monthlyRevenue: number;
+  burnRate: number;
+  teamSize: number;
+  customerCount: number;
+  churnRate: number;
+  cac: number;
+  ltv: number;
+  marketSize: number;
+  lastUpdated: string;
+}
+
+interface VoiceStartupAdvisorProps {
+  businessId?: string;
+}
+
+const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = "demo-business-123" }) => {
+  const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       type: 'bot',
@@ -14,14 +48,14 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [businessData, setBusinessData] = useState(null);
+  const [businessData, setBusinessData] = useState<BusinessData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   
-  const messagesEndRef = useRef(null);
-  const chatInputRef = useRef(null);
-  const recognitionRef = useRef(null);
-  const audioRef = useRef(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -36,13 +70,13 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
         setIsListening(true);
       };
 
-      recognitionRef.current.onresult = (event) => {
+      recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         setInputMessage(transcript);
         setIsListening(false);
       };
 
-      recognitionRef.current.onerror = (event) => {
+      recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
       };
@@ -93,7 +127,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   };
 
   // Enhanced Gemini API call with business context
-  const callGeminiAPI = async (userMessage, businessContext) => {
+  const callGeminiAPI = async (userMessage: string, businessContext: BusinessData | null) => {
     const response = await fetch('/api/gemini-voice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -113,7 +147,7 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   };
 
   // Eleven Labs Text-to-Speech
-  const speakWithElevenLabs = async (text) => {
+  const speakWithElevenLabs = async (text: string) => {
     if (!voiceEnabled) return;
     
     setIsLoadingAudio(true);
@@ -153,44 +187,44 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
     }
   };
 
-  const handleSendMessage = async (messageText = inputMessage) => {
+  const handleSendMessage = async (messageText: string = inputMessage) => {
     if (!messageText.trim()) return;
 
-    const userMessage = {
+    const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       content: messageText,
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev: Message[]) => [...prev, userMessage]);
     setInputMessage('');
     setIsLoading(true);
 
     try {
       const botResponse = await callGeminiAPI(messageText, businessData);
       
-      const botMessage = {
+      const botMessage: Message = {
         id: Date.now() + 1,
         type: 'bot',
         content: botResponse,
         timestamp: new Date()
       };
 
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev: Message[]) => [...prev, botMessage]);
       
       // Speak the response using Eleven Labs if voice is enabled
       if (voiceEnabled) {
         await speakWithElevenLabs(botResponse);
       }
     } catch (error) {
-      const errorMessage = {
+      const errorMessage: Message = {
         id: Date.now() + 1,
         type: 'bot',
         content: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev: Message[]) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -209,23 +243,22 @@ const VoiceStartupAdvisor = ({ businessId = "demo-business-123" }) => {
   };
 
   const toggleSpeaking = () => {
-    if (isSpeaking && audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      setIsSpeaking(false);
+    if (isSpeaking) {
+      stopSpeaking();
+    } else {
+      setVoiceEnabled(!voiceEnabled);
     }
-    setVoiceEnabled(!voiceEnabled);
   };
 
   const stopSpeaking = () => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
-      setIsSpeaking(false);
     }
+    setIsSpeaking(false);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
