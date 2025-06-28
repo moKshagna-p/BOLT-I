@@ -18,6 +18,7 @@ import StartupDetailsPage from "./components/StartupDetailsPage";
 import InvestorDetailsPage from "./components/InvestorDetailsPage";
 import PageTransition from "./components/PageTransition";
 import LoginSignupPage from "./components/LoginSignupPage";
+import VoiceStartupAdvisor from "./components/VoiceStartupAdvisor";
 
 const AppContent = () => {
   const location = useLocation();
@@ -108,6 +109,16 @@ const AppContent = () => {
                     </h1>
                     <p className="mt-4 text-gray-400">Coming soon...</p>
                   </div>
+                </div>
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/voice-advisor"
+            element={
+              <PageTransition>
+                <div className="min-h-screen bg-[#121212]">
+                  <VoiceStartupAdvisor />
                 </div>
               </PageTransition>
             }

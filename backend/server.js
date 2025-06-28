@@ -5,7 +5,6 @@ const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const fetch = require('node-fetch'); // For Node.js < 18
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -63,6 +62,58 @@ function assessRevenueHealth(businessData) {
   if (businessData.monthlyRevenue >= 10000) return "Growing revenue";
   return "Early revenue stage";
 }
+
+// Intelligent fallback response generator
+function generateFallbackResponse(message, businessData) {
+  const lowerMessage = message.toLowerCase();
+  
+  // Revenue and growth questions
+  if (lowerMessage.includes('revenue') || lowerMessage.includes('growth') || lowerMessage.includes('sales')) {
+    if (businessData && businessData.monthlyRevenue) {
+      return `Based on your current monthly revenue of $${businessData.monthlyRevenue.toLocaleString()}, you're in the ${assessRevenueHealth(businessData)} category. Focus on increasing your customer base and improving your conversion rates. Consider implementing a referral program and optimizing your sales funnel.`;
+    }
+    return "For revenue growth, focus on customer acquisition, retention, and increasing your average order value. Track your key metrics like customer acquisition cost and lifetime value to ensure sustainable growth.";
+  }
+  
+  // Burn rate and runway questions
+  if (lowerMessage.includes('burn') || lowerMessage.includes('runway') || lowerMessage.includes('cash')) {
+    if (businessData && businessData.burnRate) {
+      const runway = calculateRunway(businessData);
+      const burnMultiple = calculateBurnMultiple(businessData);
+      return `Your current burn rate is $${businessData.burnRate.toLocaleString()} per month with a burn multiple of ${burnMultiple}. Your estimated runway is ${runway} months. To extend your runway, focus on reducing costs and increasing revenue. Consider renegotiating vendor contracts and optimizing your team structure.`;
+    }
+    return "To manage your burn rate effectively, track all expenses, prioritize essential costs, and focus on revenue-generating activities. Aim for a burn multiple under 3x for healthy growth.";
+  }
+  
+  // Customer and churn questions
+  if (lowerMessage.includes('customer') || lowerMessage.includes('churn') || lowerMessage.includes('retention')) {
+    if (businessData && businessData.churnRate) {
+      return `Your current churn rate is ${businessData.churnRate}%, which is ${assessChurnHealth(businessData.churnRate).toLowerCase()}. With ${businessData.customerCount?.toLocaleString()} customers, focus on improving customer satisfaction, onboarding, and support. Implement feedback loops and proactive customer success programs.`;
+    }
+    return "To reduce churn, focus on customer success, regular feedback collection, and addressing pain points quickly. Aim for a monthly churn rate under 5% for SaaS businesses.";
+  }
+  
+  // Team and hiring questions
+  if (lowerMessage.includes('team') || lowerMessage.includes('hire') || lowerMessage.includes('employee')) {
+    if (businessData && businessData.teamSize) {
+      return `With your team of ${businessData.teamSize} people, focus on building a strong company culture and clear communication channels. Consider hiring strategically based on your growth stage and prioritize roles that directly impact revenue or product development.`;
+    }
+    return "When building your team, hire for culture fit and specific skills needed for your current growth stage. Focus on roles that directly impact your key metrics and customer satisfaction.";
+  }
+  
+  // General startup advice
+  if (lowerMessage.includes('advice') || lowerMessage.includes('help') || lowerMessage.includes('what should')) {
+    if (businessData) {
+      const unitEconomics = assessUnitEconomics(businessData);
+      return `Based on your business data, your unit economics are ${unitEconomics}. Focus on your most critical metrics: customer acquisition cost, lifetime value, and churn rate. Prioritize activities that improve these numbers and consider your runway when making strategic decisions.`;
+    }
+    return "Focus on your core value proposition, track key metrics religiously, and maintain a healthy cash runway. Build strong relationships with customers and iterate based on their feedback.";
+  }
+  
+  // Default response
+  return "I'm experiencing high demand right now, but I can still help! Based on startup best practices, focus on your key metrics, maintain healthy unit economics, and prioritize customer satisfaction. What specific aspect of your business would you like to discuss?";
+}
+
 async function logInteraction(businessId, question, response) {
   try {
     const database = await connectToDatabase();
@@ -83,7 +134,62 @@ async function logInteraction(businessId, question, response) {
 // GET /api/business/:id
 app.get('/api/business/:id', async (req, res) => {
   const businessId = req.params.id;
+  
   try {
+    // Check if user is authenticated
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    
+    if (token) {
+      try {
+        // Verify token and get user data
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        const database = await connectToDatabase();
+        
+        // Get user's startup profile and monthly data
+        const startupProfile = await database.collection('startup_profiles').findOne(
+          { userId: decoded.userId }
+        );
+        
+        const monthlyData = await database.collection('startup_monthly_data').findOne(
+          { userId: decoded.userId }
+        );
+        
+        if (startupProfile) {
+          // Convert startup profile to business data format
+          const businessData = {
+            businessId: decoded.userId,
+            companyName: startupProfile.companyName,
+            industry: startupProfile.industry,
+            stage: startupProfile.stage,
+            description: startupProfile.description,
+            teamSize: startupProfile.teamSize || 0,
+            monthlyRevenue: startupProfile.monthlyRevenue || 0,
+            burnRate: 0, // Calculate from monthly data if available
+            customerCount: 0, // Would need to be added to startup profile
+            churnRate: 0, // Would need to be added to startup profile
+            cac: 0, // Would need to be added to startup profile
+            ltv: 0, // Would need to be added to startup profile
+            marketSize: 0, // Would need to be added to startup profile
+            lastUpdated: startupProfile.updatedAt || startupProfile.createdAt
+          };
+          
+          // If monthly data exists, calculate burn rate from it
+          if (monthlyData && monthlyData.monthlyData && monthlyData.monthlyData.length > 0) {
+            const latestMonth = monthlyData.monthlyData[monthlyData.monthlyData.length - 1];
+            businessData.monthlyRevenue = latestMonth.revenue || 0;
+            businessData.burnRate = latestMonth.expenses || 0;
+          }
+          
+          console.log('Returning authenticated user business data:', businessData);
+          return res.json(businessData);
+        }
+      } catch (jwtError) {
+        console.log('JWT verification failed, falling back to demo data:', jwtError.message);
+      }
+    }
+    
+    // Fallback to demo data or existing business lookup
     const database = await connectToDatabase();
     const business = await database
       .collection('businesses')
@@ -219,7 +325,7 @@ app.post('/api/gemini-voice', async (req, res) => {
     res.json({ message: cleanedText });
   } catch (error) {
     console.error('Gemini API error:', error);
-    const fallbackResponse = "I'm having trouble accessing my AI capabilities right now. However, based on general startup best practices, I'd recommend focusing on your key metrics like customer acquisition cost, churn rate, and monthly recurring revenue. Would you like to try asking your question again?";
+    const fallbackResponse = generateFallbackResponse(message, businessData);
     res.json({ message: fallbackResponse });
   }
 });
@@ -433,13 +539,19 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Check if user has a startup profile
+    const startupProfile = await database.collection('startup_profiles').findOne(
+      { userId: req.user.userId }
+    );
+
     res.json({
       success: true,
       user: {
         id: user._id,
         email: user.email,
         createdAt: user.createdAt,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        businessId: startupProfile ? req.user.userId : null // Use userId as businessId if they have a startup profile
       }
     });
 
@@ -723,48 +835,24 @@ app.post('/api/user/investor-details', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/user/profile - Get user profile data
+// GET /api/user/profile - Get user profile with business ID
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
     const database = await connectToDatabase();
     
-    // Get user with role
-    const user = await database.collection('users').findOne(
-      { _id: new MongoClient.ObjectId(req.user.userId) },
-      { projection: { password: 0 } }
+    // Check if user has a startup profile
+    const startupProfile = await database.collection('startup_profiles').findOne(
+      { userId: req.user.userId }
     );
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    let profileData = null;
-
-    // Get role-specific profile data
-    if (user.role === 'startup') {
-      profileData = await database.collection('startup_profiles').findOne(
-        { userId: req.user.userId }
-      );
-    } else if (user.role === 'investor') {
-      profileData = await database.collection('investor_profiles').findOne(
-        { userId: req.user.userId }
-      );
-    }
 
     res.json({
       success: true,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin
-      },
-      profile: profileData
+      businessId: startupProfile ? req.user.userId : null, // Use userId as businessId if they have a startup profile
+      hasStartupProfile: !!startupProfile
     });
 
   } catch (error) {
-    console.error('Get profile error:', error);
+    console.error('Get user profile error:', error);
     res.status(500).json({ error: 'Failed to get user profile' });
   }
 });
