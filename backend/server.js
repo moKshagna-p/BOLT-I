@@ -499,7 +499,8 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
       monthlyRevenue,
       fundingNeeded,
       website,
-      location
+      location,
+      monthlyData
     } = req.body;
 
     if (!companyName || !industry || !stage || !description) {
@@ -530,6 +531,46 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
       { upsert: true }
     );
 
+    // Store monthly data if provided
+    if (monthlyData && Array.isArray(monthlyData) && monthlyData.length > 0) {
+      console.log('Storing monthly data for userId:', req.user.userId);
+      console.log('Monthly data:', monthlyData);
+      
+      const monthlyResult = await database.collection('startup_monthly_data').updateOne(
+        { userId: req.user.userId },
+        { 
+          $set: {
+            userId: req.user.userId,
+            monthlyData: monthlyData,
+            updatedAt: new Date().toISOString()
+          }
+        },
+        { upsert: true }
+      );
+      console.log('Monthly data storage result:', monthlyResult);
+      
+      // Also try with ObjectId format as backup
+      try {
+        const objectIdUserId = new MongoClient.ObjectId(req.user.userId);
+        await database.collection('startup_monthly_data').updateOne(
+          { userId: objectIdUserId },
+          { 
+            $set: {
+              userId: objectIdUserId,
+              monthlyData: monthlyData,
+              updatedAt: new Date().toISOString()
+            }
+          },
+          { upsert: true }
+        );
+        console.log('Also stored with ObjectId format');
+      } catch (objectIdError) {
+        console.log('ObjectId conversion failed (expected for string userIds):', objectIdError.message);
+      }
+    } else {
+      console.log('No monthly data provided or invalid format');
+    }
+
     res.json({
       success: true,
       message: 'Startup details saved successfully',
@@ -539,6 +580,89 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Startup details save error:', error);
     res.status(500).json({ error: 'Failed to save startup details' });
+  }
+});
+
+// GET /api/user/startup-monthly-data - Get startup monthly data
+app.get('/api/user/startup-monthly-data', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    console.log('Fetching monthly data for userId:', req.user.userId);
+    
+    // Try to find with string userId first
+    let monthlyData = await database.collection('startup_monthly_data').findOne(
+      { userId: req.user.userId }
+    );
+
+    // If not found, try with ObjectId format
+    if (!monthlyData) {
+      try {
+        const objectIdUserId = new MongoClient.ObjectId(req.user.userId);
+        monthlyData = await database.collection('startup_monthly_data').findOne(
+          { userId: objectIdUserId }
+        );
+        console.log('Found monthly data with ObjectId format');
+      } catch (objectIdError) {
+        console.log('ObjectId conversion failed (expected for string userIds):', objectIdError.message);
+      }
+    } else {
+      console.log('Found monthly data with string format');
+    }
+
+    console.log('Found monthly data:', monthlyData);
+
+    if (!monthlyData) {
+      console.log('No monthly data found for user');
+      return res.json({
+        success: true,
+        monthlyData: []
+      });
+    }
+
+    res.json({
+      success: true,
+      monthlyData: monthlyData.monthlyData || []
+    });
+
+  } catch (error) {
+    console.error('Get monthly data error:', error);
+    res.status(500).json({ error: 'Failed to get monthly data' });
+  }
+});
+
+// POST /api/user/startup-monthly-data - Update startup monthly data
+app.post('/api/user/startup-monthly-data', authenticateToken, async (req, res) => {
+  try {
+    const { monthlyData } = req.body;
+
+    if (!monthlyData || !Array.isArray(monthlyData)) {
+      return res.status(400).json({ error: 'Monthly data array is required' });
+    }
+
+    const database = await connectToDatabase();
+    
+    const result = await database.collection('startup_monthly_data').updateOne(
+      { userId: req.user.userId },
+      { 
+        $set: {
+          userId: req.user.userId,
+          monthlyData: monthlyData,
+          updatedAt: new Date().toISOString()
+        }
+      },
+      { upsert: true }
+    );
+
+    res.json({
+      success: true,
+      message: 'Monthly data saved successfully',
+      dataId: result.upsertedId || 'updated'
+    });
+
+  } catch (error) {
+    console.error('Monthly data save error:', error);
+    res.status(500).json({ error: 'Failed to save monthly data' });
   }
 });
 
@@ -642,6 +766,103 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ error: 'Failed to get user profile' });
+  }
+});
+
+// GET /api/debug/collections - Debug endpoint to check all collections
+app.get('/api/debug/collections', async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    // Get all collections
+    const collections = await database.listCollections().toArray();
+    
+    const result = {};
+    
+    for (const collection of collections) {
+      const collectionName = collection.name;
+      const count = await database.collection(collectionName).countDocuments();
+      const sampleData = await database.collection(collectionName).find().limit(2).toArray();
+      
+      result[collectionName] = {
+        count: count,
+        sampleData: sampleData
+      };
+    }
+    
+    res.json({
+      success: true,
+      database: 'startup_advisor',
+      collections: result
+    });
+
+  } catch (error) {
+    console.error('Debug collections error:', error);
+    res.status(500).json({ error: 'Failed to get collections info' });
+  }
+});
+
+// GET /api/debug/monthly-data/:userId - Debug endpoint to check monthly data for specific user
+app.get('/api/debug/monthly-data/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const database = await connectToDatabase();
+    
+    const monthlyData = await database.collection('startup_monthly_data').findOne(
+      { userId: userId }
+    );
+    
+    const startupProfile = await database.collection('startup_profiles').findOne(
+      { userId: userId }
+    );
+    
+    res.json({
+      success: true,
+      userId: userId,
+      monthlyData: monthlyData,
+      startupProfile: startupProfile
+    });
+
+  } catch (error) {
+    console.error('Debug monthly data error:', error);
+    res.status(500).json({ error: 'Failed to get monthly data info' });
+  }
+});
+
+// POST /api/test/insert-monthly-data - Test endpoint to manually insert monthly data
+app.post('/api/test/insert-monthly-data', async (req, res) => {
+  try {
+    const { userId, monthlyData } = req.body;
+    
+    if (!userId || !monthlyData || !Array.isArray(monthlyData)) {
+      return res.status(400).json({ error: 'userId and monthlyData array are required' });
+    }
+
+    const database = await connectToDatabase();
+    
+    const result = await database.collection('startup_monthly_data').updateOne(
+      { userId: userId },
+      { 
+        $set: {
+          userId: userId,
+          monthlyData: monthlyData,
+          updatedAt: new Date().toISOString()
+        }
+      },
+      { upsert: true }
+    );
+
+    console.log('Test insert result:', result);
+
+    res.json({
+      success: true,
+      message: 'Test monthly data inserted successfully',
+      result: result
+    });
+
+  } catch (error) {
+    console.error('Test insert error:', error);
+    res.status(500).json({ error: 'Failed to insert test monthly data' });
   }
 });
 
