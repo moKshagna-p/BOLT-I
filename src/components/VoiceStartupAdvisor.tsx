@@ -35,7 +35,7 @@ interface VoiceStartupAdvisorProps {
   businessId?: string;
 }
 
-const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = "demo-business-123" }) => {
+const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
@@ -51,43 +51,116 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
   const [businessData, setBusinessData] = useState<BusinessData | null>(null);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [userBusinessId, setUserBusinessId] = useState<string | null>(null);
+  const [audioOutputEnabled, setAudioOutputEnabled] = useState(false);
+  const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
+  const [speechRecognitionError, setSpeechRecognitionError] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<any>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Initialize speech recognition
+  // Get user's business ID from their profile
+  const getUserBusinessId = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.log('No authentication token found, using demo data');
+        return 'demo-business-123';
+      }
+
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        if (userData.businessId) {
+          console.log('Found user business ID:', userData.businessId);
+          return userData.businessId;
+        }
+      }
+    } catch (error) {
+      console.error('Error getting user business ID:', error);
+    }
+    
+    console.log('Using demo business ID');
+    return 'demo-business-123';
+  };
+
+  // Initialize speech recognition and load user data
   useEffect(() => {
+    const initializeData = async () => {
+      // Get the user's business ID
+      const businessIdToUse = businessId || await getUserBusinessId();
+      setUserBusinessId(businessIdToUse);
+      
+      // Load business data
+      await loadBusinessData(businessIdToUse);
+    };
+
+    initializeData();
+
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = false;
       recognitionRef.current.interimResults = false;
       recognitionRef.current.lang = 'en-US';
+      recognitionRef.current.maxAlternatives = 1;
 
       recognitionRef.current.onstart = () => {
         setIsListening(true);
+        setSpeechRecognitionError(null);
+        console.log('Speech recognition started');
       };
 
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
+        console.log('Speech recognition result:', transcript);
         setInputMessage(transcript);
         setIsListening(false);
+        setSpeechRecognitionError(null);
       };
 
       recognitionRef.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
+        
+        // Handle specific error types
+        if (event.error === 'network') {
+          const errorMsg = 'Voice input requires HTTPS. Try typing instead!';
+          setSpeechRecognitionError(errorMsg);
+          setSpeechRecognitionSupported(false);
+          console.log('Network error - speech recognition requires HTTPS');
+        } else if (event.error === 'not-allowed') {
+          const errorMsg = 'Microphone access denied. Please allow microphone access.';
+          setSpeechRecognitionError(errorMsg);
+          console.log('Microphone access denied');
+        } else if (event.error === 'no-speech') {
+          const errorMsg = 'No speech detected. Please try again.';
+          setSpeechRecognitionError(errorMsg);
+          console.log('No speech detected');
+        } else {
+          const errorMsg = 'Voice input not available. Please type your message.';
+          setSpeechRecognitionError(errorMsg);
+          setSpeechRecognitionSupported(false);
+        }
       };
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
+        console.log('Speech recognition ended');
       };
+    } else {
+      console.log('Speech recognition not supported in this browser');
+      setSpeechRecognitionSupported(false);
+      setSpeechRecognitionError('Voice input not supported in this browser');
     }
-
-    // Load business data on component mount
-    loadBusinessData();
   }, [businessId]);
 
   const scrollToBottom = () => {
@@ -98,18 +171,37 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
     scrollToBottom();
   }, [messages]);
 
-  // Load business data from MongoDB (simulated)
-  const loadBusinessData = async () => {
+  // Load business data from MongoDB (with authentication)
+  const loadBusinessData = async (businessIdToUse: string) => {
     try {
-      const response = await fetch(`/api/business/${businessId}`);
+      console.log('Loading business data for ID:', businessIdToUse);
+      const token = localStorage.getItem('token');
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`/api/business/${businessIdToUse}`, {
+        headers
+      });
+      
+      console.log('Business data response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Business data loaded:', data);
         setBusinessData(data);
+      } else {
+        console.log('Business data response not ok, using fallback');
+        throw new Error('Response not ok');
       }
     } catch (error) {
       console.error('Failed to load business data:', error);
       // Demo data fallback
-      setBusinessData({
+      const fallbackData = {
         companyName: "TechStartup Inc",
         industry: "SaaS",
         stage: "Series A",
@@ -122,28 +214,48 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
         ltv: 2400,
         marketSize: 50000000,
         lastUpdated: new Date().toISOString()
-      });
+      };
+      console.log('Using fallback business data:', fallbackData);
+      setBusinessData(fallbackData);
     }
   };
 
   // Enhanced Gemini API call with business context
   const callGeminiAPI = async (userMessage: string, businessContext: BusinessData | null) => {
+    console.log('Calling Gemini API with message:', userMessage);
+    console.log('Business context being sent:', businessContext);
+    
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
     const response = await fetch('/api/gemini-voice', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ 
         message: userMessage, 
         businessData: businessContext,
-        businessId 
+        businessId: userBusinessId
       })
     });
     
-    if (!response.ok) {
-      throw new Error('API request failed');
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Response data:', data);
+    
+    // The backend always returns a message, even in fallback mode
+    if (data.message) {
+      console.log('Returning message:', data.message);
+      return data.message;
     }
     
-    const data = await response.json();
-    return data.message;
+    // Only throw error if there's no message in the response
+    throw new Error('No response message received');
   };
 
   // Eleven Labs Text-to-Speech
@@ -187,44 +299,57 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
     }
   };
 
-  const handleSendMessage = async (messageText: string = inputMessage) => {
-    if (!messageText.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now(),
-      type: 'user',
-      content: messageText,
-      timestamp: new Date()
-    };
-
-    setMessages((prev: Message[]) => [...prev, userMessage]);
+    const userMessage = inputMessage.trim();
     setInputMessage('');
     setIsLoading(true);
 
+    // Add user message to chat
+    const userMsg: Message = {
+      id: Date.now(),
+      type: 'user',
+      content: userMessage,
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMsg]);
+
+    console.log('handleSendMessage called with:', userMessage);
+    console.log('Current business data:', businessData);
+
     try {
-      const botResponse = await callGeminiAPI(messageText, businessData);
-      
-      const botMessage: Message = {
+      console.log('About to call callGeminiAPI');
+      const response = await callGeminiAPI(userMessage, businessData);
+      console.log('callGeminiAPI returned:', response);
+
+      // Add bot response to chat
+      const botMsg: Message = {
         id: Date.now() + 1,
         type: 'bot',
-        content: botResponse,
+        content: response,
         timestamp: new Date()
       };
+      setMessages(prev => [...prev, botMsg]);
 
-      setMessages((prev: Message[]) => [...prev, botMessage]);
-      
-      // Speak the response using Eleven Labs if voice is enabled
-      if (voiceEnabled) {
-        await speakWithElevenLabs(botResponse);
+      // Only generate audio if audio output is enabled
+      if (audioOutputEnabled && voiceEnabled) {
+        try {
+          await speakWithElevenLabs(response);
+        } catch (audioError) {
+          console.error('Audio generation failed:', audioError);
+          // Don't show error to user, just continue without audio
+        }
       }
     } catch (error) {
-      const errorMessage: Message = {
+      console.error('Error getting response:', error);
+      const errorMsg: Message = {
         id: Date.now() + 1,
         type: 'bot',
         content: "I'm having trouble connecting right now. Please try again in a moment.",
         timestamp: new Date()
       };
-      setMessages((prev: Message[]) => [...prev, errorMessage]);
+      setMessages(prev => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
     }
@@ -321,6 +446,25 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
           </div>
         </div>
       </div>
+
+      {/* Voice Input Notice */}
+      {!speechRecognitionSupported && (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-3 mb-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-blue-700">
+                <strong>Voice Input Note:</strong> Voice input requires HTTPS and works best in production. 
+                For now, please type your questions or use the quick prompts below.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Business Data Summary */}
       {businessData && (
@@ -440,7 +584,7 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
           {quickPrompts.map((prompt, index) => (
             <button
               key={index}
-              onClick={() => handleSendMessage(prompt)}
+              onClick={() => setInputMessage(prompt)}
               className="bg-gradient-to-r from-blue-100 to-purple-100 hover:from-blue-200 hover:to-purple-200 px-3 py-2 rounded-full text-sm whitespace-nowrap transition-colors text-gray-700"
               disabled={isLoading}
             >
@@ -460,26 +604,66 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({ businessId = 
             onKeyPress={handleKeyPress}
             placeholder="Ask me about your business or speak to me..."
             className="flex-1 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows="2"
+            rows={2}
             disabled={isLoading}
           />
           <div className="flex flex-col space-y-2">
+            {/* Voice Controls */}
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (isListening) {
+                      recognitionRef.current?.stop();
+                    } else {
+                      recognitionRef.current?.start();
+                    }
+                  }}
+                  disabled={!recognitionRef.current || !speechRecognitionSupported}
+                  className={`p-2 rounded-full transition-all ${
+                    isListening
+                      ? 'bg-red-500 text-white animate-pulse'
+                      : speechRecognitionSupported
+                      ? 'bg-purple-600 text-white hover:bg-purple-700'
+                      : 'bg-gray-400 text-white cursor-not-allowed'
+                  }`}
+                  title={!speechRecognitionSupported ? 'Voice input not available on localhost' : 'Click to speak'}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+                <div className="flex flex-col">
+                  <span className="text-sm text-gray-400">
+                    {!speechRecognitionSupported ? 'Voice input unavailable' : isListening ? 'Listening...' : 'Voice input'}
+                  </span>
+                  {speechRecognitionError && (
+                    <span className="text-xs text-red-500 max-w-48">
+                      {speechRecognitionError}
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAudioOutputEnabled(!audioOutputEnabled)}
+                  className={`p-2 rounded-full transition-all ${
+                    audioOutputEnabled
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-600 text-white hover:bg-gray-700'
+                  }`}
+                  title={audioOutputEnabled ? 'Disable voice output' : 'Enable voice output'}
+                >
+                  {audioOutputEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                </button>
+                <span className="text-sm text-gray-400">
+                  {audioOutputEnabled ? 'Voice output on' : 'Voice output off'}
+                </span>
+              </div>
+            </div>
             <button
-              onClick={isListening ? stopListening : startListening}
-              disabled={isLoading}
-              className={`p-3 rounded-lg transition-colors ${
-                isListening 
-                  ? 'bg-red-600 hover:bg-red-700 text-white animate-pulse' 
-                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={isListening ? 'Stop listening' : 'Start voice input'}
-            >
-              {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={() => handleSendMessage()}
+              onClick={handleSendMessage}
               disabled={isLoading || !inputMessage.trim()}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
               <Send className="w-5 h-5" />
             </button>

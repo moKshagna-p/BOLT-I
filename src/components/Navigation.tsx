@@ -18,7 +18,7 @@ const Navigation: React.FC = () => {
 
   const navItems = [
     { name: "Analytics", path: "/analytics" },
-    { name: "Chatbot", path: "/chatbot" },
+    { name: "Chatbot", path: "/voice-advisor" },
     { name: "Resources", path: "/resources" },
     { name: "Chat", path: "/chat" },
     { name: "Tinder-style interface", path: "/tinder" },
