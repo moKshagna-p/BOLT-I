@@ -245,15 +245,9 @@ const AnalyticsPage: React.FC = () => {
         const token = localStorage.getItem('token');
         
         if (!token) {
-          console.log('No token found, using localStorage fallback');
-          // Fallback to localStorage if no token
-          const storedData = localStorage.getItem('monthlyData');
-          if (storedData) {
-            setMonthsData(JSON.parse(storedData));
-          } else {
-            // Default data if nothing is stored
-            setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
-          }
+          console.log('No token found, using default data');
+          // Fallback to default data if no token
+          setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
           setLoading(false);
           return;
         }
@@ -277,34 +271,17 @@ const AnalyticsPage: React.FC = () => {
           setMonthsData(data.monthlyData);
           // Don't store in localStorage to avoid conflicts
         } else {
-          console.log('No MongoDB data found, checking localStorage...');
-          // Only fallback to localStorage if no data in MongoDB
-          const storedData = localStorage.getItem('monthlyData');
-          if (storedData) {
-            console.log('Using localStorage data as fallback');
-            setMonthsData(JSON.parse(storedData));
-          } else {
-            console.log('No data found anywhere, using defaults');
-            // Default data if nothing is stored
-            setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
-          }
+          console.log('No MongoDB data found, using defaults');
+          // Only use default data if no data in MongoDB
+          setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
         }
         
         setError(null);
       } catch (err) {
         console.error('Error fetching monthly data:', err);
         setError('Failed to load monthly data from server. Using default values.');
-        
-        // Only fallback to localStorage on actual error
-        const storedData = localStorage.getItem('monthlyData');
-        if (storedData) {
-          console.log('Using localStorage data due to error');
-          setMonthsData(JSON.parse(storedData));
-        } else {
-          console.log('No localStorage data, using defaults');
-          // Default data if nothing is stored
-          setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
-        }
+        // Only use default data on actual error
+        setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
       } finally {
         setLoading(false);
       }

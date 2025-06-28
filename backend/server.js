@@ -3,7 +3,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -531,7 +531,7 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   try {
     const database = await connectToDatabase();
     const user = await database.collection('users').findOne(
-      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { _id: new ObjectId(req.user.userId) },
       { projection: { password: 0 } }
     );
     
@@ -574,7 +574,7 @@ app.post('/api/user/role', authenticateToken, async (req, res) => {
     
     // Update user with role
     const result = await database.collection('users').updateOne(
-      { _id: new MongoClient.ObjectId(req.user.userId) },
+      { _id: new ObjectId(req.user.userId) },
       { 
         $set: { 
           role: role,
@@ -663,7 +663,7 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
       
       // Also try with ObjectId format as backup
       try {
-        const objectIdUserId = new MongoClient.ObjectId(req.user.userId);
+        const objectIdUserId = new ObjectId(req.user.userId);
         await database.collection('startup_monthly_data').updateOne(
           { userId: objectIdUserId },
           { 
@@ -710,7 +710,7 @@ app.get('/api/user/startup-monthly-data', authenticateToken, async (req, res) =>
     // If not found, try with ObjectId format
     if (!monthlyData) {
       try {
-        const objectIdUserId = new MongoClient.ObjectId(req.user.userId);
+        const objectIdUserId = new ObjectId(req.user.userId);
         monthlyData = await database.collection('startup_monthly_data').findOne(
           { userId: objectIdUserId }
         );
@@ -807,7 +807,11 @@ app.post('/api/user/investor-details', authenticateToken, async (req, res) => {
       company: company || null,
       role: role || null,
       portfolioSize: portfolioSize || null,
-      investmentFocus,
+      investmentFocus: Array.isArray(investmentFocus)
+        ? investmentFocus
+        : (typeof investmentFocus === 'string' && investmentFocus.length > 0
+            ? [investmentFocus]
+            : []),
       preferredStages: preferredStages || null,
       description,
       website: website || null,
@@ -839,7 +843,9 @@ app.post('/api/user/investor-details', authenticateToken, async (req, res) => {
 app.get('/api/user/profile', authenticateToken, async (req, res) => {
   try {
     const database = await connectToDatabase();
-    
+    const user = await database.collection('users').findOne(
+      { _id: new ObjectId(req.user.userId) }
+    );
     // Check if user has a startup profile
     const startupProfile = await database.collection('startup_profiles').findOne(
       { userId: req.user.userId }
@@ -848,7 +854,8 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       businessId: startupProfile ? req.user.userId : null, // Use userId as businessId if they have a startup profile
-      hasStartupProfile: !!startupProfile
+      hasStartupProfile: !!startupProfile,
+      role: user?.role || null
     });
 
   } catch (error) {
@@ -951,6 +958,30 @@ app.post('/api/test/insert-monthly-data', async (req, res) => {
   } catch (error) {
     console.error('Test insert error:', error);
     res.status(500).json({ error: 'Failed to insert test monthly data' });
+  }
+});
+
+// GET /api/investors - Get all investor profiles
+app.get('/api/investors', async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    const investors = await database.collection('investor_profiles').find().toArray();
+    res.json({ profiles: investors });
+  } catch (error) {
+    console.error('Error fetching investors:', error);
+    res.status(500).json({ error: 'Failed to fetch investors' });
+  }
+});
+
+// GET /api/startups - Get all startup profiles
+app.get('/api/startups', async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    const startups = await database.collection('startup_profiles').find().toArray();
+    res.json({ profiles: startups });
+  } catch (error) {
+    console.error('Error fetching startups:', error);
+    res.status(500).json({ error: 'Failed to fetch startups' });
   }
 });
 

@@ -162,7 +162,8 @@ const LoginSignupPage: React.FC = () => {
 
       // Store token in localStorage
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.removeItem('startupDetails');
+      localStorage.removeItem('investorDetails');
 
       // Navigate based on action type
       if (mode === "signup") {
