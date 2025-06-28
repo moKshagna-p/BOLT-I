@@ -21,6 +21,7 @@ const Navigation: React.FC = () => {
     { name: "Chatbot", path: "/voice-advisor" },
     { name: "Resources", path: "/resources" },
     { name: "Chat", path: "/chat" },
+    { name: "Profile", path: "/profile-edit" },
     { name: "Tinder-style interface", path: "/tinder" },
   ];
 

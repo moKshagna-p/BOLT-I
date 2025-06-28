@@ -19,6 +19,7 @@ import InvestorDetailsPage from "./components/InvestorDetailsPage";
 import PageTransition from "./components/PageTransition";
 import LoginSignupPage from "./components/LoginSignupPage";
 import VoiceStartupAdvisor from "./components/VoiceStartupAdvisor";
+import ProfileEditPage from "./components/ProfileEditPage";
 
 const AppContent = () => {
   const location = useLocation();
@@ -128,6 +129,14 @@ const AppContent = () => {
             element={
               <PageTransition>
                 <ChatPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/profile-edit"
+            element={
+              <PageTransition>
+                <ProfileEditPage />
               </PageTransition>
             }
           />

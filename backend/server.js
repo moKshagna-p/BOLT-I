@@ -985,6 +985,222 @@ app.get('/api/startups', async (req, res) => {
   }
 });
 
+// GET /api/business/profile - Get startup profile for authenticated user
+app.get('/api/business/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    // Get startup profile
+    const startupProfile = await database.collection('startup_profiles').findOne(
+      { userId: req.user.userId }
+    );
+    
+    // Get monthly data
+    const monthlyData = await database.collection('startup_monthly_data').findOne(
+      { userId: req.user.userId }
+    );
+    
+    if (!startupProfile) {
+      return res.status(404).json({ error: 'Startup profile not found' });
+    }
+    
+    const profileData = {
+      ...startupProfile,
+      monthlyData: monthlyData?.monthlyData || []
+    };
+    
+    res.json(profileData);
+    
+  } catch (error) {
+    console.error('Get startup profile error:', error);
+    res.status(500).json({ error: 'Failed to get startup profile' });
+  }
+});
+
+// GET /api/investor/profile - Get investor profile for authenticated user
+app.get('/api/investor/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    const investorProfile = await database.collection('investor_profiles').findOne(
+      { userId: req.user.userId }
+    );
+    
+    if (!investorProfile) {
+      return res.status(404).json({ error: 'Investor profile not found' });
+    }
+    
+    res.json(investorProfile);
+    
+  } catch (error) {
+    console.error('Get investor profile error:', error);
+    res.status(500).json({ error: 'Failed to get investor profile' });
+  }
+});
+
+// PUT /api/business/profile - Update startup profile
+app.put('/api/business/profile', authenticateToken, async (req, res) => {
+  try {
+    const {
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize,
+      monthlyRevenue,
+      fundingNeeded,
+      website,
+      location
+    } = req.body;
+
+    if (!companyName || !industry || !stage || !description) {
+      return res.status(400).json({ error: 'Required fields: companyName, industry, stage, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    const updateData = {
+      companyName,
+      industry,
+      stage,
+      description,
+      teamSize: teamSize ? parseInt(teamSize) : null,
+      monthlyRevenue: monthlyRevenue ? parseFloat(monthlyRevenue) : null,
+      fundingNeeded: fundingNeeded || null,
+      website: website || null,
+      location: location || null,
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('startup_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Startup profile not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Startup profile updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Update startup profile error:', error);
+    res.status(500).json({ error: 'Failed to update startup profile' });
+  }
+});
+
+// PUT /api/investor/profile - Update investor profile
+app.put('/api/investor/profile', authenticateToken, async (req, res) => {
+  try {
+    const {
+      fullName,
+      company,
+      role,
+      portfolioSize,
+      investmentFocus,
+      preferredStages,
+      description,
+      website,
+      location,
+      linkedin
+    } = req.body;
+
+    if (!fullName || !investmentFocus || !description) {
+      return res.status(400).json({ error: 'Required fields: fullName, investmentFocus, description' });
+    }
+
+    const database = await connectToDatabase();
+    
+    const updateData = {
+      fullName,
+      company: company || null,
+      role: role || null,
+      portfolioSize: portfolioSize || null,
+      investmentFocus,
+      preferredStages: preferredStages || null,
+      description,
+      website: website || null,
+      location: location || null,
+      linkedin: linkedin || null,
+      updatedAt: new Date().toISOString()
+    };
+
+    const result = await database.collection('investor_profiles').updateOne(
+      { userId: req.user.userId },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: 'Investor profile not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Investor profile updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Update investor profile error:', error);
+    res.status(500).json({ error: 'Failed to update investor profile' });
+  }
+});
+
+// DELETE /api/business/profile - Delete startup profile
+app.delete('/api/business/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    const result = await database.collection('startup_profiles').deleteOne(
+      { userId: req.user.userId }
+    );
+    
+    // Also delete monthly data
+    await database.collection('startup_monthly_data').deleteOne(
+      { userId: req.user.userId }
+    );
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Startup profile not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Startup profile deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete startup profile error:', error);
+    res.status(500).json({ error: 'Failed to delete startup profile' });
+  }
+});
+
+// DELETE /api/investor/profile - Delete investor profile
+app.delete('/api/investor/profile', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    
+    const result = await database.collection('investor_profiles').deleteOne(
+      { userId: req.user.userId }
+    );
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Investor profile not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Investor profile deleted successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete investor profile error:', error);
+    res.status(500).json({ error: 'Failed to delete investor profile' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 }); 
