@@ -21,72 +21,113 @@ import {
   Link2,
   Calendar,
   FileText,
+  Sparkles,
+  Zap,
+  Target,
 } from "lucide-react";
 import styled from "styled-components";
+import { motion } from "framer-motion";
 
 const StyledChatPage = styled.div`
   .chat-container {
-    background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    background: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(139, 92, 246, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
   }
 
   .chat-sidebar {
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px);
-    border-right: 1px solid rgba(139, 92, 246, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(16px);
+    border-right: 1px solid rgba(139, 92, 246, 0.15);
   }
 
   .chat-list-item {
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chat-list-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.1), transparent);
+    transition: left 0.5s;
+  }
+
+  .chat-list-item:hover::before {
+    left: 100%;
   }
 
   .chat-list-item:hover {
-    background: rgba(139, 92, 246, 0.1);
-    border-color: rgba(139, 92, 246, 0.2);
+    background: rgba(139, 92, 246, 0.08);
+    border-color: rgba(139, 92, 246, 0.25);
+    transform: translateX(4px);
   }
 
   .chat-list-item.active {
-    background: rgba(139, 92, 246, 0.15);
-    border-color: rgba(139, 92, 246, 0.3);
+    background: rgba(139, 92, 246, 0.12);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15);
   }
 
   .message-input {
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(139, 92, 246, 0.2);
+    transition: all 0.3s ease;
   }
 
   .message-input:focus {
-    border-color: rgba(139, 92, 246, 0.4);
+    border-color: rgba(139, 92, 246, 0.5);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+    background: rgba(0, 0, 0, 0.4);
   }
 
   .message-bubble {
-    max-width: 80%;
-    animation: fadeIn 0.3s ease-out;
+    max-width: 75%;
+    animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
   }
 
   .message-bubble.sent {
-    background: rgba(139, 92, 246, 0.2);
-    border: 1px solid rgba(139, 92, 246, 0.3);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.1);
   }
 
   .message-bubble.received {
-    background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    backdrop-filter: blur(8px);
   }
 
-  @keyframes fadeIn {
+  .message-bubble.sent::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, transparent 100%);
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(20px) scale(0.95);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translateY(0) scale(1);
     }
   }
 
@@ -111,6 +152,55 @@ const StyledChatPage = styled.div`
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(139, 92, 246, 0.4);
+  }
+
+  .status-indicator {
+    position: relative;
+  }
+
+  .status-indicator::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(18, 18, 18, 0.9);
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  }
+
+  .status-indicator.offline::after {
+    background: #6b7280;
+    box-shadow: none;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass-card {
+    background: rgba(18, 18, 18, 0.85);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+  }
+
+  .pulse-animation {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
   }
 `;
 
@@ -349,99 +439,144 @@ const ChatPage: React.FC = () => {
 
   return (
     <StyledChatPage className="pt-16 min-h-screen bg-[#121212] relative">
-      {/* Background gradient effects */}
+      {/* Enhanced background effects */}
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-30"
         style={{
           background:
-            "linear-gradient(45deg, rgba(139, 92, 246, 0.1) 0%, rgba(0, 0, 0, 0) 100%)",
-          filter: "blur(80px)",
+            "radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)",
+          filter: "blur(100px)",
         }}
       />
 
       <div className="relative z-10 max-w-8xl mx-auto px-4 py-8">
-        <div className="chat-container rounded-2xl overflow-hidden h-[calc(100vh-8rem)] flex">
-          {/* Chat Sidebar */}
+        {/* Header with stats */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold gradient-text mb-2">Investor Network</h1>
+              <p className="text-gray-400">Connect with top investors and grow your startup</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="glass-card rounded-xl px-4 py-2">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-5 h-5 text-purple-400" />
+                  <span className="text-gray-300 font-medium">{contacts.length}</span>
+                  <span className="text-gray-500 text-sm">Connections</span>
+                </div>
+              </div>
+              <div className="glass-card rounded-xl px-4 py-2">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-5 h-5 text-purple-400" />
+                  <span className="text-gray-300 font-medium">{messages.length}</span>
+                  <span className="text-gray-500 text-sm">Messages</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="chat-container rounded-2xl overflow-hidden h-[calc(100vh-12rem)] flex"
+        >
+          {/* Enhanced Chat Sidebar */}
           <div className="chat-sidebar w-80 flex-shrink-0 flex flex-col">
             {/* Search and Filter */}
-            <div className="p-4 border-b border-purple-900/20">
-              <div className="relative">
+            <div className="p-6 border-b border-purple-900/20">
+              <div className="relative mb-4">
                 <input
                   type="text"
                   value={searchTerm}
                   onChange={handleSearch}
-                  placeholder="Search conversations..."
-                  className="w-full bg-black/20 text-gray-200 placeholder-gray-400 rounded-lg pl-10 pr-4 py-2 text-sm border border-purple-900/20 focus:border-purple-500/40 focus:outline-none"
+                  placeholder="Search investors..."
+                  className="w-full bg-black/30 text-gray-200 placeholder-gray-400 rounded-xl pl-12 pr-4 py-3 text-sm border border-purple-900/20 focus:border-purple-500/40 focus:outline-none transition-all"
                 />
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
               </div>
-              <div className="flex items-center mt-4 space-x-2">
+              <div className="flex items-center space-x-2">
                 <button
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
+                  className={`px-4 py-2 text-sm rounded-xl transition-all font-medium ${
                     filter === "all"
-                      ? "bg-purple-600/20 text-purple-300"
-                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10"
+                      ? "bg-gradient-to-r from-purple-600/20 to-purple-700/20 text-purple-300 border border-purple-500/30"
+                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10 border border-transparent"
                   }`}
                   onClick={() => handleFilterChange("all")}
                 >
+                  <Target className="w-4 h-4 inline mr-2" />
                   All
                 </button>
                 <button
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
+                  className={`px-4 py-2 text-sm rounded-xl transition-all font-medium ${
                     filter === "vc"
-                      ? "bg-purple-600/20 text-purple-300"
-                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10"
+                      ? "bg-gradient-to-r from-purple-600/20 to-purple-700/20 text-purple-300 border border-purple-500/30"
+                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10 border border-transparent"
                   }`}
                   onClick={() => handleFilterChange("vc")}
                 >
+                  <Building2 className="w-4 h-4 inline mr-2" />
                   VC
                 </button>
                 <button
-                  className={`px-3 py-1 text-xs rounded-full transition-all ${
+                  className={`px-4 py-2 text-sm rounded-xl transition-all font-medium ${
                     filter === "angel"
-                      ? "bg-purple-600/20 text-purple-300"
-                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10"
+                      ? "bg-gradient-to-r from-purple-600/20 to-purple-700/20 text-purple-300 border border-purple-500/30"
+                      : "bg-black/20 text-gray-400 hover:bg-purple-600/10 border border-transparent"
                   }`}
                   onClick={() => handleFilterChange("angel")}
                 >
+                  <Star className="w-4 h-4 inline mr-2" />
                   Angel
                 </button>
               </div>
             </div>
 
-            {/* Chat List */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar">
-              {filteredContacts.map((contact) => (
-                <div
+            {/* Enhanced Chat List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+              {filteredContacts.map((contact, index) => (
+                <motion.div
                   key={contact.id}
-                  className={`chat-list-item p-4 cursor-pointer ${
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className={`chat-list-item p-4 cursor-pointer rounded-xl mx-2 mb-2 ${
                     activeChat === contact.id ? "active" : ""
                   }`}
                   onClick={() => setActiveChat(contact.id)}
                 >
                   <div className="flex items-start space-x-3">
-                    <div className="relative">
+                    <div className="relative status-indicator">
                       <img
                         src={contact.avatar}
                         alt={contact.name}
-                        className="w-12 h-12 rounded-full"
+                        className={`w-12 h-12 rounded-full border-2 ${
+                          contact.status === "online" 
+                            ? "border-green-500/30" 
+                            : "border-gray-500/30"
+                        }`}
                       />
                       <div
                         className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black ${
                           contact.status === "online"
-                            ? "bg-green-500"
+                            ? "bg-green-500 pulse-animation"
                             : "bg-gray-500"
                         }`}
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-1">
                         <h3 className="text-sm font-semibold text-gray-200 truncate">
                           {contact.name}
                         </h3>
                         <div className="flex items-center space-x-2">
                           {contact.unread > 0 && (
-                            <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
+                            <span className="bg-gradient-to-r from-purple-500 to-purple-600 text-white text-xs px-2 py-1 rounded-full font-medium">
                               {contact.unread}
                             </span>
                           )}
@@ -450,126 +585,150 @@ const ChatPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
-                      <p className="text-xs text-purple-300 mt-0.5">
+                      <p className="text-xs text-purple-300 font-medium mb-1">
                         {contact.role} • {contact.company}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1 truncate">
+                      <p className="text-xs text-gray-400 mb-2 truncate">
                         {contact.lastMessage}
                       </p>
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {contact.tags.map((tag, index) => (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {contact.tags.slice(0, 2).map((tag, index) => (
                           <span
                             key={index}
-                            className="text-xs px-2 py-0.5 rounded-full bg-purple-900/20 text-purple-300"
+                            className="text-xs px-2 py-0.5 rounded-full bg-purple-900/30 text-purple-300 border border-purple-500/20"
                           >
                             {tag}
                           </span>
                         ))}
+                        {contact.tags.length > 2 && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800/50 text-gray-400">
+                            +{contact.tags.length - 2}
+                          </span>
+                        )}
                       </div>
-                      <div className="mt-2 text-xs text-gray-400">
-                        <span className="text-purple-300">Status:</span>{" "}
+                      <div className="text-xs text-gray-400">
+                        <span className="text-purple-300 font-medium">Status:</span>{" "}
                         {contact.meetingStatus}
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
 
-          {/* Chat Main Area */}
+          {/* Enhanced Chat Main Area */}
           <div className="flex-1 flex flex-col">
-            {/* Chat Header */}
+            {/* Enhanced Chat Header */}
             {activeContact && (
-              <div className="p-4 border-b border-purple-900/20">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={activeContact.avatar}
-                      alt={activeContact.name}
-                      className="w-10 h-10 rounded-full"
-                    />
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 border-b border-purple-900/20"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative status-indicator">
+                      <img
+                        src={activeContact.avatar}
+                        alt={activeContact.name}
+                        className={`w-14 h-14 rounded-full border-2 ${
+                          activeContact.status === "online" 
+                            ? "border-green-500/30" 
+                            : "border-gray-500/30"
+                        }`}
+                      />
+                    </div>
                     <div>
-                      <h2 className="text-gray-200 font-semibold">
+                      <h2 className="text-xl font-bold text-gray-200 mb-1">
                         {activeContact.name}
                       </h2>
-                      <p className="text-sm text-purple-300">
+                      <p className="text-sm text-purple-300 font-medium">
                         {activeContact.role} • {activeContact.company}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <button
                       onClick={() => handleAudioCall(activeContact)}
-                      className="p-2 hover:bg-purple-600/10 rounded-full transition-all"
+                      className="p-3 hover:bg-purple-600/10 rounded-xl transition-all border border-purple-500/20 hover:border-purple-500/40"
                       title="Start audio call"
                     >
                       <Phone className="w-5 h-5 text-purple-300" />
                     </button>
                     <button
                       onClick={() => handleVideoCall(activeContact)}
-                      className="p-2 hover:bg-purple-600/10 rounded-full transition-all"
+                      className="p-3 hover:bg-purple-600/10 rounded-xl transition-all border border-purple-500/20 hover:border-purple-500/40"
                       title="Start video call"
                     >
                       <Video className="w-5 h-5 text-purple-300" />
                     </button>
                     <button
                       onClick={() => handleScheduleMeeting(activeContact)}
-                      className="p-2 hover:bg-purple-600/10 rounded-full transition-all"
+                      className="p-3 hover:bg-purple-600/10 rounded-xl transition-all border border-purple-500/20 hover:border-purple-500/40"
                       title="Schedule meeting"
                     >
                       <Calendar className="w-5 h-5 text-purple-300" />
                     </button>
                   </div>
                 </div>
-                {/* Additional contact info */}
-                <div className="mt-3 p-2 bg-purple-900/10 rounded-lg">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* Enhanced contact info */}
+                <div className="glass-card rounded-xl p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-purple-300">Investment Focus:</span>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Target className="w-4 h-4 text-purple-400" />
+                        <span className="text-purple-300 font-medium">Investment Focus</span>
+                      </div>
                       <p className="text-gray-300">
                         {activeContact.investmentFocus?.join(", ")}
                       </p>
                     </div>
                     <div>
-                      <span className="text-purple-300">Portfolio Size:</span>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <DollarSign className="w-4 h-4 text-purple-400" />
+                        <span className="text-purple-300 font-medium">Portfolio Size</span>
+                      </div>
                       <p className="text-gray-300">
                         {activeContact.portfolioSize}
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
-            {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
-              {messages.map((message) => (
-                <div
+            {/* Enhanced Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+              {messages.map((message, index) => (
+                <motion.div
                   key={message.id}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
                   className={`flex ${
                     message.sender === "me" ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
-                    className={`message-bubble rounded-2xl px-4 py-2 ${
+                    className={`message-bubble rounded-2xl px-5 py-3 ${
                       message.sender === "me" ? "sent" : "received"
                     }`}
                   >
-                    <p className="text-gray-200">{message.text}</p>
+                    <p className="text-gray-200 leading-relaxed">{message.text}</p>
                     {message.attachments?.map((attachment, index) => (
                       <div
                         key={index}
-                        className="mt-2 flex items-center space-x-2 p-2 bg-purple-900/20 rounded-lg cursor-pointer hover:bg-purple-900/30 transition-colors"
+                        className="mt-3 flex items-center space-x-3 p-3 bg-purple-900/20 rounded-xl cursor-pointer hover:bg-purple-900/30 transition-colors border border-purple-500/20"
                         onClick={() => window.open(attachment.url, "_blank")}
                       >
-                        <FileText className="w-4 h-4 text-purple-300" />
-                        <span className="text-sm text-purple-300">
+                        <FileText className="w-5 h-5 text-purple-300" />
+                        <span className="text-sm text-purple-300 font-medium">
                           {attachment.name}
                         </span>
                       </div>
                     ))}
-                    <div className="flex items-center justify-end mt-1 space-x-1">
+                    <div className="flex items-center justify-end mt-2 space-x-2">
                       <span className="text-xs text-gray-400">
                         {message.timestamp}
                       </span>
@@ -584,12 +743,12 @@ const ChatPage: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
-            {/* Message Input */}
-            <div className="p-4 border-t border-purple-900/20">
+            {/* Enhanced Message Input */}
+            <div className="p-6 border-t border-purple-900/20">
               <form
                 onSubmit={handleSendMessage}
                 className="flex items-center space-x-3"
@@ -597,7 +756,7 @@ const ChatPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleFileAttachment}
-                  className="p-2 hover:bg-purple-600/10 rounded-full transition-all"
+                  className="p-3 hover:bg-purple-600/10 rounded-xl transition-all border border-purple-500/20 hover:border-purple-500/40"
                   title="Attach file"
                 >
                   <Paperclip className="w-5 h-5 text-purple-300" />
@@ -607,19 +766,19 @@ const ChatPage: React.FC = () => {
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="message-input flex-1 rounded-xl px-4 py-2 text-gray-200 placeholder-gray-400"
+                  className="message-input flex-1 rounded-xl px-5 py-3 text-gray-200 placeholder-gray-400 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="p-2 hover:bg-purple-600/10 rounded-full transition-all"
+                  className="p-3 hover:bg-purple-600/10 rounded-xl transition-all border border-purple-500/20 hover:border-purple-500/40"
                   title="Add emoji"
                 >
                   <Smile className="w-5 h-5 text-purple-300" />
                 </button>
                 <button
                   type="submit"
-                  className="p-2 bg-purple-600 hover:bg-purple-700 rounded-full transition-all"
+                  className="p-3 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl transition-all shadow-lg hover:shadow-purple-500/25"
                   title="Send message"
                 >
                   <Send className="w-5 h-5 text-white" />
@@ -627,7 +786,7 @@ const ChatPage: React.FC = () => {
               </form>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </StyledChatPage>
   );

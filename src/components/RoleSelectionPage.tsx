@@ -95,9 +95,6 @@ const RoleSelectionPage: React.FC = () => {
           throw new Error(data.error || 'Failed to save role');
         }
 
-        // Store the role in localStorage as well for quick access
-        localStorage.setItem('userRole', selectedRole);
-        
         // Navigate to details page based on role
         if (selectedRole === 'startup') {
           navigate('/startup-details');
@@ -107,8 +104,7 @@ const RoleSelectionPage: React.FC = () => {
 
       } catch (error) {
         console.error('Error saving role:', error);
-        // Fallback to localStorage and continue
-        localStorage.setItem('userRole', selectedRole);
+        // Instead, just navigate based on role
         if (selectedRole === 'startup') {
           navigate('/startup-details');
         } else {

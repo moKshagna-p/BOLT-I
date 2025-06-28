@@ -315,21 +315,11 @@ const StartupDetailsPage: React.FC = () => {
         throw new Error(data.error || 'Failed to save startup details');
       }
 
-      // Store startup details in localStorage as backup only
-      localStorage.setItem('startupDetails', JSON.stringify(formData));
-      // Don't store monthly data in localStorage to avoid conflicts with MongoDB
-      
-      console.log('Startup details saved successfully');
-      
       // Navigate to analytics page
       navigate('/analytics');
 
     } catch (error) {
       console.error('Error saving startup details:', error);
-      // Fallback to localStorage only on error
-      localStorage.setItem('startupDetails', JSON.stringify(formData));
-      localStorage.setItem('monthlyData', JSON.stringify(monthlyData));
-      console.log('Saved to localStorage as fallback due to error');
       navigate('/analytics');
     }
   };

@@ -168,16 +168,11 @@ const InvestorDetailsPage: React.FC = () => {
         throw new Error(data.error || 'Failed to save investor details');
       }
 
-      // Store investor details in localStorage as well for quick access
-      localStorage.setItem('investorDetails', JSON.stringify(formData));
-      
       // Navigate to analytics page
       navigate('/analytics');
 
     } catch (error) {
       console.error('Error saving investor details:', error);
-      // Fallback to localStorage and continue
-      localStorage.setItem('investorDetails', JSON.stringify(formData));
       navigate('/analytics');
     }
   };
