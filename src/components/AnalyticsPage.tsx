@@ -14,6 +14,7 @@ import {
   ComposedChart,
   Legend
 } from "recharts";
+import { useParams } from "react-router-dom";
 
 const DEFAULT_FORECAST_MONTHS = 12;
 const DEFAULTS = {
@@ -224,6 +225,7 @@ function simulateAdvancedGrowth(
 }
 
 const AnalyticsPage: React.FC = () => {
+  const { startupId } = useParams();
   const [forecastMonthsCount, setForecastMonthsCount] = useState(DEFAULT_FORECAST_MONTHS);
   const [monthsData, setMonthsData] = useState<any[]>([]);
   const [simResult, setSimResult] = useState<any[]>([]);
@@ -236,6 +238,7 @@ const AnalyticsPage: React.FC = () => {
     marketSize: DEFAULTS.marketSize,
     initialTeamSize: DEFAULTS.initialTeamSize,
   });
+  const [startupName, setStartupName] = useState<string>("");
 
   // Fetch monthly data from MongoDB on component mount
   useEffect(() => {
@@ -243,52 +246,59 @@ const AnalyticsPage: React.FC = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        
         if (!token) {
-          console.log('No token found, using default data');
-          // Fallback to default data if no token
           setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
           setLoading(false);
           return;
         }
-
-        console.log('Fetching monthly data from MongoDB...');
-        const response = await fetch('http://localhost:3001/api/user/startup-monthly-data', {
+        let url = 'http://localhost:3001/api/user/startup-monthly-data';
+        if (startupId) {
+          url += `?startupId=${startupId}`;
+        }
+        const response = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-
         if (!response.ok) {
           throw new Error(`Failed to fetch monthly data: ${response.status}`);
         }
-
         const data = await response.json();
-        console.log('MongoDB response:', data);
-        
         if (data.monthlyData && data.monthlyData.length > 0) {
-          console.log('Using MongoDB data:', data.monthlyData);
           setMonthsData(data.monthlyData);
-          // Don't store in localStorage to avoid conflicts
         } else {
-          console.log('No MongoDB data found, using defaults');
-          // Only use default data if no data in MongoDB
           setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
         }
-        
         setError(null);
       } catch (err) {
-        console.error('Error fetching monthly data:', err);
         setError('Failed to load monthly data from server. Using default values.');
-        // Only use default data on actual error
         setMonthsData(Array.from({ length: 3 }, (_, i) => getDefaultMonth(i)));
       } finally {
         setLoading(false);
       }
     };
-
     fetchMonthlyData();
-  }, []);
+  }, [startupId]);
+
+  // Fetch startup name if viewing as investor
+  useEffect(() => {
+    const fetchStartupName = async () => {
+      if (!startupId) return;
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`http://localhost:3001/api/business/${startupId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setStartupName(data.companyName || data.name || "Startup");
+      } catch {
+        setStartupName("Startup");
+      }
+    };
+    fetchStartupName();
+  }, [startupId]);
 
   const handleSimulate = () => {
     if (monthsData.length === 0) {
@@ -340,7 +350,11 @@ const AnalyticsPage: React.FC = () => {
       {/* Content wrapper */}
       <div className="relative z-10 pt-20">
         <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-100 mb-2">Advanced Startup Growth Simulation</h1>
+          {startupId ? (
+            <h1 className="text-3xl font-bold text-gray-100 mb-2">{startupName || "Startup"}'s Insight</h1>
+          ) : (
+            <h1 className="text-3xl font-bold text-gray-100 mb-2">Advanced Startup Growth Simulation</h1>
+          )}
           <p className="mb-8 text-gray-400 max-w-2xl">
             Advanced simulation with seasonality, product-market fit, viral growth, team scaling, and funding rounds.
           </p>
