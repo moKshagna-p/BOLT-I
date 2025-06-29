@@ -3,17 +3,32 @@ import MetamaskPayment from './MetamaskPayment';
 import PeraWalletPayment from './PeraWalletPayment';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import CongratulationsModal from './CongratulationsModal';
 
 const PaymentsPage: React.FC = () => {
   const [paymentsTab, setPaymentsTab] = useState<'subscription' | 'history'>('subscription');
   const [currentPlan, setCurrentPlan] = useState<string>('Free');
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [showCongratulationsModal, setShowCongratulationsModal] = useState(false);
+  const [upgradedPlan, setUpgradedPlan] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
     setCurrentPlan(localStorage.getItem('currentPlan') || 'Free');
     setPaymentHistory(JSON.parse(localStorage.getItem('paymentHistory') || '[]'));
+    
+    // Check if we should show congratulations modal
+    const plan = sessionStorage.getItem('showCongratulationsModal');
+    if (plan) {
+      setUpgradedPlan(plan);
+      setShowCongratulationsModal(true);
+      sessionStorage.removeItem('showCongratulationsModal');
+    }
   }, []);
+
+  const handleCloseCongratulationsModal = () => {
+    setShowCongratulationsModal(false);
+  };
 
   return (
     <motion.div
@@ -193,6 +208,13 @@ const PaymentsPage: React.FC = () => {
           </AnimatePresence>
         </motion.div>
       </div>
+      {showCongratulationsModal && (
+        <CongratulationsModal
+          open={showCongratulationsModal}
+          onClose={handleCloseCongratulationsModal}
+          plan={upgradedPlan}
+        />
+      )}
     </motion.div>
   );
 };

@@ -26,6 +26,10 @@ const PaymentPage: React.FC = () => {
       reason: 'subscription',
     });
     localStorage.setItem('paymentHistory', JSON.stringify(history));
+    
+    // Set flag to show congratulations modal
+    sessionStorage.setItem('showCongratulationsModal', plan);
+    
     // Redirect to /payments instead of /profile
     navigate('/payments');
   };
