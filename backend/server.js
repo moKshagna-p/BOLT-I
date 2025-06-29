@@ -532,13 +532,16 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
     res.json({
       success: true,
       user: {
-        id: user._id,
         email: user.email,
-        role: user.role,
+        id: user._id,
+        role: user.role || null,
         createdAt: user.createdAt,
-        lastLogin: user.lastLogin,
-        businessId: startupProfile ? req.user.userId : null // Use userId as businessId if they have a startup profile
-      }
+        lastLogin: user.lastLogin
+      },
+      businessId: startupProfile ? req.user.userId : null, // Use userId as businessId if they have a startup profile
+      hasStartupProfile: !!startupProfile,
+      role: user?.role || null,
+      currentPlan: user?.currentPlan || 'Free'
     });
 
   } catch (error) {
