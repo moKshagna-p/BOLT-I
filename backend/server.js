@@ -134,86 +134,74 @@ async function logInteraction(businessId, question, response) {
 // GET /api/business/:id
 app.get('/api/business/:id', async (req, res) => {
   const businessId = req.params.id;
-  
   try {
     // Check if user is authenticated
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
     if (token) {
       try {
         // Verify token and get user data
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
         const database = await connectToDatabase();
-        
-        // Get user's startup profile and monthly data
+        // If requesting own business, use decoded.userId
+        const userIdToFetch = businessId;
+        // Get startup profile by userId
         const startupProfile = await database.collection('startup_profiles').findOne(
-          { userId: decoded.userId }
+          { userId: userIdToFetch }
         );
-        
-        const monthlyData = await database.collection('startup_monthly_data').findOne(
-          { userId: decoded.userId }
-        );
-        
         if (startupProfile) {
-          // Convert startup profile to business data format
-          const businessData = {
-            businessId: decoded.userId,
+          return res.json({
+            businessId: userIdToFetch,
             companyName: startupProfile.companyName,
             industry: startupProfile.industry,
             stage: startupProfile.stage,
             description: startupProfile.description,
             teamSize: startupProfile.teamSize || 0,
             monthlyRevenue: startupProfile.monthlyRevenue || 0,
-            burnRate: 0, // Calculate from monthly data if available
-            customerCount: 0, // Would need to be added to startup profile
-            churnRate: 0, // Would need to be added to startup profile
-            cac: 0, // Would need to be added to startup profile
-            ltv: 0, // Would need to be added to startup profile
-            marketSize: 0, // Would need to be added to startup profile
+            fundingNeeded: startupProfile.fundingNeeded || null,
+            website: startupProfile.website || null,
+            location: startupProfile.location || null,
             lastUpdated: startupProfile.updatedAt || startupProfile.createdAt
-          };
-          
-          // If monthly data exists, calculate burn rate from it
-          if (monthlyData && monthlyData.monthlyData && monthlyData.monthlyData.length > 0) {
-            const latestMonth = monthlyData.monthlyData[monthlyData.monthlyData.length - 1];
-            businessData.monthlyRevenue = latestMonth.revenue || 0;
-            businessData.burnRate = latestMonth.expenses || 0;
-          }
-          
-          console.log('Returning authenticated user business data:', businessData);
-          return res.json(businessData);
+          });
         }
       } catch (jwtError) {
-        console.log('JWT verification failed, falling back to demo data:', jwtError.message);
+        // Ignore and fallback
       }
     }
-    
-    // Fallback to demo data or existing business lookup
+    // Fallback: try to fetch from startup_profiles without auth
     const database = await connectToDatabase();
-    const business = await database
-      .collection('businesses')
-      .findOne({ businessId });
-    if (!business) {
-      // Return demo data if business not found
-      const demoData = {
-        businessId,
-        companyName: "TechStartup Inc",
-        industry: "SaaS",
-        stage: "Series A",
-        monthlyRevenue: 45000,
-        burnRate: 25000,
-        teamSize: 12,
-        customerCount: 1200,
-        churnRate: 5.2,
-        cac: 150,
-        ltv: 2400,
-        marketSize: 50000000,
-        lastUpdated: new Date().toISOString()
-      };
-      return res.json(demoData);
+    const startupProfile = await database.collection('startup_profiles').findOne(
+      { userId: businessId }
+    );
+    if (startupProfile) {
+      return res.json({
+        businessId: businessId,
+        companyName: startupProfile.companyName,
+        industry: startupProfile.industry,
+        stage: startupProfile.stage,
+        description: startupProfile.description,
+        teamSize: startupProfile.teamSize || 0,
+        monthlyRevenue: startupProfile.monthlyRevenue || 0,
+        fundingNeeded: startupProfile.fundingNeeded || null,
+        website: startupProfile.website || null,
+        location: startupProfile.location || null,
+        lastUpdated: startupProfile.updatedAt || startupProfile.createdAt
+      });
     }
-    res.json(business);
+    // Fallback to demo data if not found
+    const demoData = {
+      businessId,
+      companyName: "TechStartup Inc",
+      industry: "SaaS",
+      stage: "Series A",
+      monthlyRevenue: 45000,
+      teamSize: 12,
+      fundingNeeded: "$500K",
+      website: null,
+      location: null,
+      lastUpdated: new Date().toISOString()
+    };
+    return res.json(demoData);
   } catch (error) {
     console.error('Database error:', error);
     // Fallback to demo data on database error
@@ -223,13 +211,10 @@ app.get('/api/business/:id', async (req, res) => {
       industry: "SaaS",
       stage: "Series A",
       monthlyRevenue: 45000,
-      burnRate: 25000,
       teamSize: 12,
-      customerCount: 1200,
-      churnRate: 5.2,
-      cac: 150,
-      ltv: 2400,
-      marketSize: 50000000,
+      fundingNeeded: "$500K",
+      website: null,
+      location: null,
       lastUpdated: new Date().toISOString()
     };
     res.json(demoData);
@@ -800,7 +785,32 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
 app.get('/api/user/startup-monthly-data', authenticateToken, async (req, res) => {
   try {
     const database = await connectToDatabase();
-    
+    const { startupId } = req.query;
+    // If startupId is provided and user is investor, fetch that startup's data
+    if (startupId && startupId !== req.user.userId) {
+      // Check user role
+      const user = await database.collection('users').findOne({ _id: new ObjectId(req.user.userId) });
+      if (!user || user.role !== 'investor') {
+        return res.status(403).json({ error: 'Forbidden: Only investors can view other startups\' analytics.' });
+      }
+      // Fetch monthly data for the specified startupId
+      let monthlyData = await database.collection('startup_monthly_data').findOne(
+        { userId: startupId }
+      );
+      if (!monthlyData) {
+        try {
+          const objectIdUserId = new ObjectId(startupId);
+          monthlyData = await database.collection('startup_monthly_data').findOne(
+            { userId: objectIdUserId }
+          );
+        } catch (objectIdError) {}
+      }
+      if (!monthlyData) {
+        return res.json({ success: true, monthlyData: [] });
+      }
+      return res.json({ success: true, monthlyData: monthlyData.monthlyData || [] });
+    }
+    // Default: fetch for current user
     console.log('Fetching monthly data for userId:', req.user.userId);
     
     // Try to find with string userId first
@@ -1087,6 +1097,59 @@ app.get('/api/startups', async (req, res) => {
   } catch (error) {
     console.error('Error fetching startups:', error);
     res.status(500).json({ error: 'Failed to fetch startups' });
+  }
+});
+
+// ===== Matchmaking Endpoints =====
+
+// POST /api/match/like - Record a like and check for mutual match
+app.post('/api/match/like', authenticateToken, async (req, res) => {
+  try {
+    const { targetUserId } = req.body;
+    if (!targetUserId) {
+      return res.status(400).json({ error: 'targetUserId is required' });
+    }
+    const database = await connectToDatabase();
+    const userId = req.user.userId;
+    if (userId === targetUserId) {
+      return res.status(400).json({ error: 'Cannot like yourself' });
+    }
+    // Record the like
+    await database.collection('matches').updateOne(
+      { userId, targetUserId },
+      { $set: { userId, targetUserId, liked: true, createdAt: new Date().toISOString() } },
+      { upsert: true }
+    );
+    // Check for mutual like
+    const mutual = await database.collection('matches').findOne({ userId: targetUserId, targetUserId: userId, liked: true });
+    if (mutual) {
+      // Always store users in sorted order to avoid MongoDB ambiguity
+      const sortedUsers = [userId, targetUserId].sort();
+      await database.collection('mutual_matches').updateOne(
+        { users: sortedUsers },
+        { $set: { users: sortedUsers, matchedAt: new Date().toISOString() } },
+        { upsert: true }
+      );
+      return res.json({ success: true, matched: true, message: 'It\'s a match!' });
+    }
+    res.json({ success: true, matched: false });
+  } catch (error) {
+    console.error('Match like error:', error);
+    res.status(500).json({ error: 'Failed to record like' });
+  }
+});
+
+// GET /api/match/list - Get all mutual matches for the logged-in user
+app.get('/api/match/list', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    const userId = req.user.userId;
+    // Find all mutual matches
+    const matches = await database.collection('mutual_matches').find({ users: userId }).toArray();
+    res.json({ success: true, matches });
+  } catch (error) {
+    console.error('Get matches error:', error);
+    res.status(500).json({ error: 'Failed to fetch matches' });
   }
 });
 

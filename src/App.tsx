@@ -100,6 +100,14 @@ const AppContent = () => {
             }
           />
           <Route
+            path="/analytics/:startupId"
+            element={
+              <PageTransition>
+                <AnalyticsPage />
+              </PageTransition>
+            }
+          />
+          <Route
             path="/resources"
             element={
               <PageTransition>
