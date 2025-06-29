@@ -15,6 +15,7 @@ import {
   Legend
 } from "recharts";
 import { useParams } from "react-router-dom";
+import UpgradeModal from './UpgradeModal';
 
 const DEFAULT_FORECAST_MONTHS = 12;
 const DEFAULTS = {
@@ -239,6 +240,7 @@ const AnalyticsPage: React.FC = () => {
     initialTeamSize: DEFAULTS.initialTeamSize,
   });
   const [startupName, setStartupName] = useState<string>("");
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
 
   // Fetch monthly data from MongoDB on component mount
   useEffect(() => {
@@ -300,6 +302,17 @@ const AnalyticsPage: React.FC = () => {
     fetchStartupName();
   }, [startupId]);
 
+  React.useEffect(() => {
+    if (sessionStorage.getItem('showUpgradeModal') === '1') {
+      setTimeout(() => {
+        setShowUpgradeModal(true);
+        sessionStorage.removeItem('showUpgradeModal');
+      }, 1500);
+    }
+  }, []);
+
+  const handleCloseUpgradeModal = () => setShowUpgradeModal(false);
+
   const handleSimulate = () => {
     if (monthsData.length === 0) {
       setError('No monthly data available for simulation');
@@ -333,6 +346,7 @@ const AnalyticsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#121212] relative overflow-hidden">
+      <UpgradeModal open={showUpgradeModal} onClose={handleCloseUpgradeModal} />
       {/* Main purple gradient beam */}
       <div
         className="absolute inset-0 rotate-45 opacity-40"

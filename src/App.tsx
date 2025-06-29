@@ -20,6 +20,9 @@ import ProfileEditPage from "./components/ProfileEditPage";
 import PageTransition from "./components/PageTransition";
 import LoginSignupPage from "./components/LoginSignupPage";
 import VoiceStartupAdvisor from "./components/VoiceStartupAdvisor";
+import PaymentPage from "./components/PaymentPage";
+import PaymentsPage from "./components/PaymentsPage";
+import UpgradeModal from './components/UpgradeModal';
 
 const AppContent = () => {
   const location = useLocation();
@@ -30,9 +33,24 @@ const AppContent = () => {
     location.pathname !== "/startup-details" &&
     location.pathname !== "/investor-details";
 
+  // Show upgrade modal if logged in and not dismissed this session
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+  React.useEffect(() => {
+    const token = localStorage.getItem('token');
+    const dismissed = sessionStorage.getItem('upgradeModalDismissed');
+    if (token && !dismissed) {
+      setShowUpgradeModal(true);
+    }
+  }, []);
+  const handleCloseUpgradeModal = () => {
+    setShowUpgradeModal(false);
+    sessionStorage.setItem('upgradeModalDismissed', '1');
+  };
+
   return (
     <div className="relative min-h-screen bg-[#121212]">
       {showNavigation && <Navigation />}
+      <UpgradeModal open={showUpgradeModal} onClose={handleCloseUpgradeModal} />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           <Route
@@ -153,6 +171,22 @@ const AppContent = () => {
             element={
               <PageTransition>
                 <TinderPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/payment"
+            element={
+              <PageTransition>
+                <PaymentPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/payments"
+            element={
+              <PageTransition>
+                <PaymentsPage />
               </PageTransition>
             }
           />

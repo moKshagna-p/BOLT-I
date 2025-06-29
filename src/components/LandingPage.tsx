@@ -2,9 +2,20 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import UpgradeModal from './UpgradeModal';
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
+
+  React.useEffect(() => {
+    if (sessionStorage.getItem('showUpgradeModal') === '1') {
+      setShowUpgradeModal(true);
+      sessionStorage.removeItem('showUpgradeModal');
+    }
+  }, []);
+
+  const handleCloseUpgradeModal = () => setShowUpgradeModal(false);
 
   const handleGetStarted = () => {
     navigate("/login");
@@ -12,6 +23,7 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
+      <UpgradeModal open={showUpgradeModal} onClose={handleCloseUpgradeModal} />
       <motion.iframe
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}

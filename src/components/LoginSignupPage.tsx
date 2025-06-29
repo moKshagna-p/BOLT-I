@@ -167,8 +167,10 @@ const LoginSignupPage: React.FC = () => {
 
       // Navigate based on action type
       if (mode === "signup") {
+        sessionStorage.setItem('showUpgradeModal', '1');
         navigate("/role-selection");
       } else {
+        sessionStorage.setItem('showUpgradeModal', '1');
         navigate("/analytics");
       }
 
