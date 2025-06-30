@@ -196,111 +196,106 @@ const LoginSignupPage: React.FC = () => {
       {/* Dark purple tint overlay for readability */}
       <div className="fixed inset-0 z-10 pointer-events-none" style={{
         background: 'linear-gradient(90deg, #1e1b4b 0%, #312e81 100%)',
-        opacity: 0.85,
+        opacity: 0.93,
         mixBlendMode: 'multiply',
         backdropFilter: 'blur(2px)'
       }} />
       {/* Subtle overlay for depth (optional, like ResourcesPage) */}
       <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px] pointer-events-none z-20" />
       <div className="relative z-30 w-full max-w-md mx-auto flex flex-col items-center">
-        {/* Logo/Icon */}
-        <div className="flex flex-col items-center mb-4 mt-4">
-          <div className="bg-gradient-to-br from-purple-600 to-indigo-500 rounded-full p-3 shadow-lg mb-2">
-            <User className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold text-center mb-2 bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent font-poppins drop-shadow-lg tracking-tight">PitchNest</h1>
-          <p className="text-lg text-purple-200/90 font-medium text-center mb-2 font-poppins">Welcome to the future of startup & investor connections</p>
+        <h1 className="text-5xl font-extrabold text-center mb-2 bg-gradient-to-r from-white to-white bg-clip-text text-transparent font-poppins drop-shadow-none tracking-tight" style={{letterSpacing: '-0.03em'}}>PitchNest</h1>
+        <p className="text-lg text-white font-medium text-center mb-8 font-poppins" style={{letterSpacing: '-0.01em'}}>Welcome to the future of startup & investor connections</p>
+        {/* Toggle: white text, white underline for active */}
+        <div className="flex w-full justify-center gap-2 mb-8">
+          <button
+            className={`px-6 py-2 text-lg font-semibold font-poppins transition-colors border-b-2 ${mode === 'login' ? 'border-white text-white' : 'border-transparent text-white/60 hover:text-white'}`}
+            style={{background: 'none', outline: 'none', boxShadow: 'none'}}
+            onClick={() => setMode('login')}
+          >
+            Login
+          </button>
+          <button
+            className={`px-6 py-2 text-lg font-semibold font-poppins transition-colors border-b-2 ${mode === 'signup' ? 'border-white text-white' : 'border-transparent text-white/60 hover:text-white'}`}
+            style={{background: 'none', outline: 'none', boxShadow: 'none'}}
+            onClick={() => setMode('signup')}
+          >
+            Sign Up
+          </button>
         </div>
-        {/* Remove Card, place form elements directly */}
-        <div className="w-full flex flex-col items-center px-2">
-          <Toggle style={{ boxShadow: '0 2px 8px 0 rgba(139, 92, 246, 0.10)' }}>
-            <ToggleButton $active={mode === "login"} onClick={() => setMode("login")}
-              style={{ transition: 'all 0.3s', fontSize: '1.1rem', letterSpacing: '-0.01em' }}>
-              <LogIn className="inline-block mr-2 w-5 h-5 align-text-bottom" />Login
-            </ToggleButton>
-            <ToggleButton $active={mode === "signup"} onClick={() => setMode("signup")}
-              style={{ transition: 'all 0.3s', fontSize: '1.1rem', letterSpacing: '-0.01em' }}>
-              <UserPlus className="inline-block mr-2 w-5 h-5 align-text-bottom" />Sign Up
-            </ToggleButton>
-          </Toggle>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm w-full max-w-md"
-            >
-              {error}
-            </motion.div>
-          )}
-          <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-4 mt-2">
+        {/* Error message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm w-full max-w-md"
+          >
+            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0Z"/></svg>
+            {error}
+          </motion.div>
+        )}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-6 mt-2">
+          <InputGroup>
+            <Input
+              name="email"
+              type="email"
+              value={fields.email}
+              onChange={handleChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              required
+              disabled={loading}
+              style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+              className="focus:ring-2 focus:ring-white focus:border-white transition-all"
+            />
+            <Label $active={focus.email || fields.email !== ""} style={{ color: '#fff' }}>Email</Label>
+          </InputGroup>
+          <InputGroup>
+            <Input
+              name="password"
+              type="password"
+              value={fields.password}
+              onChange={handleChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              required
+              disabled={loading}
+              style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+              className="focus:ring-2 focus:ring-white focus:border-white transition-all"
+            />
+            <Label $active={focus.password || fields.password !== ""} style={{ color: '#fff' }}>Password</Label>
+          </InputGroup>
+          {mode === "signup" && (
             <InputGroup>
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300">
-                <User className="w-5 h-5" />
-              </span>
               <Input
-                name="email"
-                type="email"
-                value={fields.email}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                required
-                disabled={loading}
-                style={{ paddingLeft: '2.5rem' }}
-              />
-              <Label $active={focus.email || fields.email !== ""}>Email</Label>
-            </InputGroup>
-            <InputGroup>
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300">
-                <Lock className="w-5 h-5" />
-              </span>
-              <Input
-                name="password"
+                name="confirmPassword"
                 type="password"
-                value={fields.password}
+                value={fields.confirmPassword}
                 onChange={handleChange}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 required
                 disabled={loading}
-                style={{ paddingLeft: '2.5rem' }}
+                style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+                className="focus:ring-2 focus:ring-white focus:border-white transition-all"
               />
-              <Label $active={focus.password || fields.password !== ""}>Password</Label>
+              <Label $active={focus.confirmPassword || fields.confirmPassword !== ""} style={{ color: '#fff' }}>Confirm Password</Label>
             </InputGroup>
-            {mode === "signup" && (
-              <InputGroup>
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-purple-300">
-                  <Lock className="w-5 h-5" />
-                </span>
-                <Input
-                  name="confirmPassword"
-                  type="password"
-                  value={fields.confirmPassword}
-                  onChange={handleChange}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  required
-                  disabled={loading}
-                  style={{ paddingLeft: '2.5rem' }}
-                />
-                <Label $active={focus.confirmPassword || fields.confirmPassword !== ""}>Confirm Password</Label>
-              </InputGroup>
+          )}
+          <GradientButton type="submit" disabled={loading} className="flex items-center justify-center gap-2 mt-2 w-full text-lg font-bold font-poppins shadow-lg rounded-xl transition-all" style={{background: '#fff', color: '#121212', borderRadius: '0.75rem', boxShadow: '0 4px 24px 0 #fff4'}}>
+            {loading ? (
+              <span>Loading...</span>
+            ) : mode === "login" ? (
+              <>
+                <LogIn className="w-5 h-5" /> Login
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-5 h-5" /> Sign Up
+              </>
             )}
-            <GradientButton type="submit" disabled={loading} className="flex items-center justify-center gap-2 mt-2">
-              {loading ? (
-                <span>Loading...</span>
-              ) : mode === "login" ? (
-                <>
-                  <LogIn className="w-5 h-5" /> Login
-                </>
-              ) : (
-                <>
-                  <UserPlus className="w-5 h-5" /> Sign Up
-                </>
-              )}
-            </GradientButton>
-          </form>
-        </div>
+          </GradientButton>
+        </form>
       </div>
     </div>
   );
