@@ -435,10 +435,10 @@ app.get('/health', (req, res) => {
 // POST /api/auth/signup
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, photo } = req.body;
     
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
+    if (!email || !password || !photo || !photo.data || !photo.contentType) {
+      return res.status(400).json({ error: 'Email, password, and profile photo are required' });
     }
 
     const database = await connectToDatabase();
@@ -458,7 +458,11 @@ app.post('/api/auth/signup', async (req, res) => {
       email,
       password: hashedPassword,
       createdAt: new Date().toISOString(),
-      lastLogin: null
+      lastLogin: null,
+      photo: {
+        data: new Buffer.from(photo.data, 'base64'),
+        contentType: photo.contentType
+      }
     };
 
     const result = await database.collection('users').insertOne(user);
@@ -477,7 +481,8 @@ app.post('/api/auth/signup', async (req, res) => {
       user: {
         id: result.insertedId,
         email: user.email,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        photo: user.photo
       }
     });
 
@@ -1061,25 +1066,18 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/user/upload-photo
-app.post('/api/user/upload-photo', authenticateToken, upload.single('photo'), async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
+// POST /api/user/upload-photo (accepts base64 JSON)
+app.post('/api/user/upload-photo', authenticateToken, async (req, res) => {
   try {
+    const { base64 } = req.body;
+    if (!base64) return res.status(400).json({ error: 'No image data' });
     const database = await connectToDatabase();
     const userId = req.user.userId;
-    // Read file as base64
-    const fileBuffer = fs.readFileSync(req.file.path);
-    const base64String = fileBuffer.toString('base64');
-    // Store in user profile
     await database.collection('users').updateOne(
       { _id: new ObjectId(userId) },
-      { $set: { profilePhoto: base64String, photoUpdatedAt: new Date().toISOString() } }
+      { $set: { profilePhoto: base64, photoUpdatedAt: new Date().toISOString() } }
     );
-    // Optionally delete file from disk
-    fs.unlinkSync(req.file.path);
-    res.json({ success: true, base64: base64String });
+    res.json({ success: true, base64 });
   } catch (error) {
     console.error('Upload photo error:', error);
     res.status(500).json({ error: 'Failed to upload photo' });
@@ -1259,57 +1257,6 @@ app.get('/api/startups', async (req, res) => {
   }
 });
 
-// GET /api/startup/pending-investments - Get all pending investments for the logged-in startup
-app.get('/api/startup/pending-investments', authenticateToken, async (req, res) => {
-  try {
-    const database = await connectToDatabase();
-    // Find the startup profile for the logged-in user
-    const startupProfile = await database.collection('startup_profiles').findOne({ userId: req.user.userId });
-    if (!startupProfile) {
-      return res.status(404).json({ error: 'Startup profile not found' });
-    }
-    // Find all pending investments for this startup
-    const pendingInvestments = await database.collection('investments')
-      .find({ startupId: startupProfile._id, status: 'pending' })
-      .toArray();
-    res.json({ success: true, investments: pendingInvestments });
-  } catch (err) {
-    console.error('Failed to fetch pending investments:', err);
-    res.status(500).json({ error: 'Failed to fetch pending investments' });
-  }
-});
-
-// POST /api/investments/:id/approve
-app.post('/api/investments/:id/approve', authenticateToken, async (req, res) => {
-  try {
-    const database = await connectToDatabase();
-    const investmentId = req.params.id;
-    // Optionally, check that the logged-in user owns the startup
-    await database.collection('investments').updateOne(
-      { _id: new ObjectId(investmentId) },
-      { $set: { status: 'approved', approvedAt: new Date() } }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to approve investment' });
-  }
-});
-
-// POST /api/investments/:id/reject
-app.post('/api/investments/:id/reject', authenticateToken, async (req, res) => {
-  try {
-    const database = await connectToDatabase();
-    const investmentId = req.params.id;
-    await database.collection('investments').updateOne(
-      { _id: new ObjectId(investmentId) },
-      { $set: { status: 'rejected', rejectedAt: new Date() } }
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to reject investment' });
-  }
-});
-
 // ===== Matchmaking Endpoints =====
 
 // POST /api/match/like - Record a like and check for mutual match
@@ -1404,30 +1351,6 @@ app.get('/api/match/list', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get matches error:', error);
     res.status(500).json({ error: 'Failed to fetch matches' });
-  }
-});
-
-// POST /api/investments - Create a new investment request
-app.post('/api/investments', authenticateToken, async (req, res) => {
-  try {
-    const { startupId, amount, equity } = req.body;
-    if (!startupId || !amount || !equity) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-    const database = await connectToDatabase();
-    const investment = {
-      investorId: new ObjectId(req.user.userId),
-      startupId: new ObjectId(startupId),
-      amount: Number(amount),
-      equity: Number(equity),
-      status: 'pending',
-      createdAt: new Date()
-    };
-    await database.collection('investments').insertOne(investment);
-    res.json({ success: true, investment });
-  } catch (err) {
-    console.error('Failed to create investment:', err);
-    res.status(500).json({ error: 'Failed to create investment' });
   }
 });
 
