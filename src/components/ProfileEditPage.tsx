@@ -258,6 +258,7 @@ interface UserProfile {
   role: 'startup' | 'investor';
   createdAt: string;
   lastLogin?: string;
+  profilePhoto?: string;
 }
 
 interface StartupProfile {
@@ -309,6 +310,11 @@ const ProfileEditPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Photo upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   // User data
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -386,8 +392,18 @@ const ProfileEditPage: React.FC = () => {
       if (userData.user.role === 'startup') {
         await loadStartupProfile(token);
         await loadMonthlyData(token);
+        
+        // If user has a profile photo, set it as logo for startup
+        if (userData.profilePhoto) {
+          setStartupProfile(prev => ({ ...prev, logo: `http://localhost:3001${userData.profilePhoto}` }));
+        }
       } else if (userData.user.role === 'investor') {
         await loadInvestorProfile(token);
+        
+        // If user has a profile photo, set it as avatar for investor
+        if (userData.profilePhoto) {
+          setInvestorProfile(prev => ({ ...prev, avatar: `http://localhost:3001${userData.profilePhoto}` }));
+        }
       }
 
     } catch (err) {
@@ -592,15 +608,27 @@ const ProfileEditPage: React.FC = () => {
 
   const removeTag = (index: number, type: 'startup' | 'investor', field: string) => {
     if (type === 'startup') {
-      setStartupProfile(prev => ({
-        ...prev,
-        [field]: prev[field as keyof StartupProfile]?.filter((_: any, i: number) => i !== index)
-      }));
+      setStartupProfile(prev => {
+        const currentField = prev[field as keyof StartupProfile];
+        if (Array.isArray(currentField)) {
+          return {
+            ...prev,
+            [field]: currentField.filter((_: any, i: number) => i !== index)
+          };
+        }
+        return prev;
+      });
     } else {
-      setInvestorProfile(prev => ({
-        ...prev,
-        [field]: prev[field as keyof InvestorProfile]?.filter((_: any, i: number) => i !== index)
-      }));
+      setInvestorProfile(prev => {
+        const currentField = prev[field as keyof InvestorProfile];
+        if (Array.isArray(currentField)) {
+          return {
+            ...prev,
+            [field]: currentField.filter((_: any, i: number) => i !== index)
+          };
+        }
+        return prev;
+      });
     }
   };
 
@@ -630,6 +658,118 @@ const ProfileEditPage: React.FC = () => {
     const updated = [...monthlyData];
     updated[index] = { ...updated[index], [field]: value };
     setMonthlyData(updated);
+  };
+
+  // Photo upload handlers
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setPhotoError('Please select an image file');
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError('File size must be less than 5MB');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      setPhotoError(null);
+
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch('/api/user/upload-photo', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload photo');
+      }
+
+      // Update the profile with the new photo URL
+      const photoUrl = data.photoUrl;
+      
+      if (userProfile?.role === 'startup') {
+        setStartupProfile(prev => ({ ...prev, logo: photoUrl }));
+      } else if (userProfile?.role === 'investor') {
+        setInvestorProfile(prev => ({ ...prev, avatar: photoUrl }));
+      }
+
+      setSuccess('Profile photo updated successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    try {
+      setUploadingPhoto(true);
+      setPhotoError(null);
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch('/api/user/photo', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete photo');
+      }
+
+      // Remove photo from profile
+      if (userProfile?.role === 'startup') {
+        setStartupProfile(prev => ({ ...prev, logo: '' }));
+      } else if (userProfile?.role === 'investor') {
+        setInvestorProfile(prev => ({ ...prev, avatar: '' }));
+      }
+
+      setSuccess('Profile photo removed successfully!');
+      setTimeout(() => setSuccess(null), 3000);
+
+    } catch (err) {
+      setPhotoError(err instanceof Error ? err.message : 'Failed to delete photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   if (loading) {
@@ -781,14 +921,54 @@ const ProfileEditPage: React.FC = () => {
                             {(!startupProfile.logo && !investorProfile.avatar) && (
                               <User className="w-12 h-12 text-white" />
                             )}
-                            <AvatarOverlay>
-                              <Camera className="w-8 h-8 text-white" />
+                            <AvatarOverlay onClick={triggerFileInput}>
+                              {uploadingPhoto ? (
+                                <Loader2 className="w-8 h-8 text-white animate-spin" />
+                              ) : (
+                                <Camera className="w-8 h-8 text-white" />
+                              )}
                             </AvatarOverlay>
                           </Avatar>
                         </AvatarContainer>
-                        <button className="text-purple-400 hover:text-purple-300 text-sm font-medium">
-                          Change Photo
-                        </button>
+                        
+                        {/* Hidden file input */}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          style={{ display: 'none' }}
+                        />
+                        
+                        <div className="flex flex-col gap-2">
+                          <button 
+                            onClick={triggerFileInput}
+                            disabled={uploadingPhoto}
+                            className="text-purple-400 hover:text-purple-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {uploadingPhoto ? 'Uploading...' : 'Change Photo'}
+                          </button>
+                          
+                          {(startupProfile.logo || investorProfile.avatar) && (
+                            <button 
+                              onClick={handleDeletePhoto}
+                              disabled={uploadingPhoto}
+                              className="text-red-400 hover:text-red-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              Remove Photo
+                            </button>
+                          )}
+                        </div>
+                        
+                        {photoError && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-2 p-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm"
+                          >
+                            {photoError}
+                          </motion.div>
+                        )}
                       </div>
 
                       {/* Profile Form */}

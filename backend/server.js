@@ -9,12 +9,50 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const http = require('http');
 const { Server } = require('socket.io');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(cors());
+
+// Serve uploaded files statically
+app.use('/uploads', express.static('uploads'));
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only image files
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only image files are allowed!'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB limit
+  }
+});
 
 // MongoDB connection
 const client = new MongoClient(process.env.MONGODB_URI);
@@ -539,6 +577,11 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       { userId: req.user.userId }
     );
 
+    // Check if user has an investor profile
+    const investorProfile = await database.collection('investor_profiles').findOne(
+      { userId: req.user.userId }
+    );
+
     res.json({
       success: true,
       user: {
@@ -546,12 +589,14 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
         id: user._id,
         role: user.role || null,
         createdAt: user.createdAt,
-        lastLogin: user.lastLogin
+        lastLogin: user.lastLogin,
+        profilePhoto: user.profilePhoto || null
       },
       businessId: startupProfile ? req.user.userId : null, // Use userId as businessId if they have a startup profile
       hasStartupProfile: !!startupProfile,
       role: user?.role || null,
-      currentPlan: user?.currentPlan || 'Free'
+      currentPlan: user?.currentPlan || 'Free',
+      profilePhoto: user.profilePhoto || null
     });
 
   } catch (error) {
@@ -1019,6 +1064,124 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   } catch (error) {
     console.error('Get user profile error:', error);
     res.status(500).json({ error: 'Failed to get user profile' });
+  }
+});
+
+// POST /api/user/upload-photo - Upload profile photo
+app.post('/api/user/upload-photo', authenticateToken, upload.single('photo'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const database = await connectToDatabase();
+    const userId = req.user.userId;
+    const user = await database.collection('users').findOne({ _id: new ObjectId(userId) });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Generate file URL
+    const fileUrl = `/uploads/${req.file.filename}`;
+    
+    // Update user's profile photo
+    await database.collection('users').updateOne(
+      { _id: new ObjectId(userId) },
+      { 
+        $set: { 
+          profilePhoto: fileUrl,
+          photoUpdatedAt: new Date().toISOString()
+        } 
+      }
+    );
+
+    // Also update role-specific profile if it exists
+    if (user.role === 'startup') {
+      await database.collection('startup_profiles').updateOne(
+        { userId: userId },
+        { 
+          $set: { 
+            logo: fileUrl,
+            updatedAt: new Date().toISOString()
+          } 
+        },
+        { upsert: true }
+      );
+    } else if (user.role === 'investor') {
+      await database.collection('investor_profiles').updateOne(
+        { userId: userId },
+        { 
+          $set: { 
+            avatar: fileUrl,
+            updatedAt: new Date().toISOString()
+          } 
+        },
+        { upsert: true }
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile photo uploaded successfully',
+      photoUrl: fileUrl
+    });
+
+  } catch (error) {
+    console.error('Upload photo error:', error);
+    res.status(500).json({ error: 'Failed to upload photo' });
+  }
+});
+
+// DELETE /api/user/photo - Delete profile photo
+app.delete('/api/user/photo', authenticateToken, async (req, res) => {
+  try {
+    const database = await connectToDatabase();
+    const userId = req.user.userId;
+    const user = await database.collection('users').findOne({ _id: new ObjectId(userId) });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Remove photo from user profile
+    await database.collection('users').updateOne(
+      { _id: new ObjectId(userId) },
+      { 
+        $unset: { 
+          profilePhoto: "",
+          photoUpdatedAt: ""
+        } 
+      }
+    );
+
+    // Also remove from role-specific profile if it exists
+    if (user.role === 'startup') {
+      await database.collection('startup_profiles').updateOne(
+        { userId: userId },
+        { 
+          $unset: { logo: "" },
+          $set: { updatedAt: new Date().toISOString() }
+        }
+      );
+    } else if (user.role === 'investor') {
+      await database.collection('investor_profiles').updateOne(
+        { userId: userId },
+        { 
+          $unset: { avatar: "" },
+          $set: { updatedAt: new Date().toISOString() }
+        }
+      );
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile photo removed successfully'
+    });
+
+  } catch (error) {
+    console.error('Delete photo error:', error);
+    res.status(500).json({ error: 'Failed to delete photo' });
   }
 });
 
