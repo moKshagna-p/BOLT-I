@@ -40,7 +40,7 @@ const Card = styled(motion.div)`
   overflow: hidden;
   cursor: grab;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
+  
   &:active {
     cursor: grabbing;
   }
@@ -59,7 +59,7 @@ const CardImage = styled.div<{ $imageUrl: string }>`
   background-size: cover;
   background-position: center;
   position: relative;
-
+  
   &::before {
     content: "";
     position: absolute;
@@ -116,7 +116,7 @@ const ActionButton = styled(motion.button)<{ $variant: "like" | "dislike" }>`
           ? "rgba(16, 185, 129, 0.3)"
           : "rgba(239, 68, 68, 0.3)"};
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
+  
   &:hover {
     transform: scale(1.1) translateY(-2px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4),
@@ -185,7 +185,7 @@ const Particle = styled.div<{ $delay: number }>`
 
 const GlowEffect = styled.div`
   position: relative;
-
+  
   &::before {
     content: "";
     position: absolute;
@@ -199,7 +199,7 @@ const GlowEffect = styled.div`
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-
+  
   &:hover::before {
     opacity: 0.3;
   }
@@ -395,7 +395,7 @@ function TinderPage() {
                 ? item.investmentFocus
                 : typeof item.investmentFocus === "string" &&
                   item.investmentFocus.length > 0
-                ? [item.investmentFocus]
+                    ? [item.investmentFocus]
                 : [],
               portfolioSize: item.portfolioSize || "",
               tags: item.tags || [],
@@ -621,7 +621,7 @@ function TinderPage() {
               later for new opportunities.
             </motion.p>
           </motion.div>
-
+          
           <motion.button
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -653,10 +653,10 @@ function TinderPage() {
       {/* Overlay for readability */}
       <div className="fixed inset-0 bg-gradient-to-br from-[#1e1b4b]/80 via-[#312e81]/70 to-[#0f172a]/80 z-10 pointer-events-none" />
       <GlobalStyle className="pt-20 min-h-screen relative flex flex-col items-center justify-center z-20">
-        {/* Match Modal */}
-        <AnimatePresence>
-          {showMatchModal && matchedProfile && (
-            <motion.div
+      {/* Match Modal */}
+      <AnimatePresence>
+        {showMatchModal && matchedProfile && (
+          <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
@@ -679,7 +679,7 @@ function TinderPage() {
                   Continue
                 </button>
               </div>
-            </motion.div>
+          </motion.div>
           )}
         </AnimatePresence>
         <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 flex flex-col items-center justify-center">
@@ -708,4 +708,4 @@ function TinderPage() {
   );
 }
 
-export default TinderPage;
+export default TinderPage; 

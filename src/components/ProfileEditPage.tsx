@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import * as React from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -690,7 +691,7 @@ const ProfileEditPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/user/upload-photo', {
+      const response = await fetch('http://localhost:3001/api/user/upload-photo', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -936,7 +937,7 @@ const ProfileEditPage: React.FC = () => {
                           ref={fileInputRef}
                           type="file"
                           accept="image/*"
-                          onChange={handlePhotoUpload}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handlePhotoUpload(e)}
                           style={{ display: 'none' }}
                         />
                         
@@ -979,7 +980,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={startupProfile.companyName}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, companyName: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, companyName: e.target.value }))}
                               placeholder="Enter company name"
                             />
                           </InputGroup>
@@ -988,7 +989,7 @@ const ProfileEditPage: React.FC = () => {
                             <Label>Industry *</Label>
                             <Select
                               value={startupProfile.industry}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, industry: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStartupProfile(prev => ({ ...prev, industry: e.target.value }))}
                             >
                               <option value="">Select industry</option>
                               <option value="SaaS">SaaS</option>
@@ -1006,7 +1007,7 @@ const ProfileEditPage: React.FC = () => {
                             <Label>Stage *</Label>
                             <Select
                               value={startupProfile.stage}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, stage: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStartupProfile(prev => ({ ...prev, stage: e.target.value }))}
                             >
                               <option value="">Select stage</option>
                               <option value="Pre-seed">Pre-seed</option>
@@ -1023,7 +1024,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="number"
                               value={startupProfile.teamSize || ''}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, teamSize: Number(e.target.value) }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, teamSize: Number(e.target.value) }))}
                               placeholder="Number of employees"
                             />
                           </InputGroup>
@@ -1033,7 +1034,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="number"
                               value={startupProfile.monthlyRevenue || ''}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, monthlyRevenue: Number(e.target.value) }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, monthlyRevenue: Number(e.target.value) }))}
                               placeholder="Monthly revenue in USD"
                             />
                           </InputGroup>
@@ -1043,7 +1044,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={startupProfile.fundingNeeded || ''}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, fundingNeeded: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, fundingNeeded: e.target.value }))}
                               placeholder="e.g., $500K, $1M, $5M"
                             />
                           </InputGroup>
@@ -1053,7 +1054,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="url"
                               value={startupProfile.website || ''}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, website: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, website: e.target.value }))}
                               placeholder="https://yourcompany.com"
                             />
                           </InputGroup>
@@ -1063,7 +1064,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={startupProfile.location || ''}
-                              onChange={(e) => setStartupProfile(prev => ({ ...prev, location: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStartupProfile(prev => ({ ...prev, location: e.target.value }))}
                               placeholder="City, Country"
                             />
                           </InputGroup>
@@ -1073,7 +1074,7 @@ const ProfileEditPage: React.FC = () => {
                               <Label>Company Description *</Label>
                               <TextArea
                                 value={startupProfile.description}
-                                onChange={(e) => setStartupProfile(prev => ({ ...prev, description: e.target.value }))}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setStartupProfile(prev => ({ ...prev, description: e.target.value }))}
                                 placeholder="Describe your business, what problem you're solving, and your unique value proposition..."
                               />
                             </InputGroup>
@@ -1093,8 +1094,8 @@ const ProfileEditPage: React.FC = () => {
                               <input
                                 type="text"
                                 value={newTag}
-                                onChange={(e) => setNewTag(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('startup'))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTag(e.target.value)}
+                                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.preventDefault(), addTag('startup'))}
                                 placeholder="Add tags..."
                                 className="flex-1 bg-transparent border-none outline-none text-gray-200 placeholder-gray-400 min-w-32"
                               />
@@ -1108,7 +1109,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={investorProfile.fullName}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, fullName: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, fullName: e.target.value }))}
                               placeholder="Enter your full name"
                             />
                           </InputGroup>
@@ -1118,7 +1119,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={investorProfile.company || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, company: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, company: e.target.value }))}
                               placeholder="Your company or organization"
                             />
                           </InputGroup>
@@ -1128,7 +1129,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={investorProfile.role || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, role: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, role: e.target.value }))}
                               placeholder="e.g., Partner, Principal, Angel Investor"
                             />
                           </InputGroup>
@@ -1137,7 +1138,7 @@ const ProfileEditPage: React.FC = () => {
                             <Label>Portfolio Size</Label>
                             <Select
                               value={investorProfile.portfolioSize || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, portfolioSize: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setInvestorProfile(prev => ({ ...prev, portfolioSize: e.target.value }))}
                             >
                               <option value="">Select portfolio size</option>
                               <option value="<$1M">Less than $1M</option>
@@ -1153,7 +1154,7 @@ const ProfileEditPage: React.FC = () => {
                             <Label>Preferred Stages</Label>
                             <Select
                               value={investorProfile.preferredStages || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, preferredStages: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setInvestorProfile(prev => ({ ...prev, preferredStages: e.target.value }))}
                             >
                               <option value="">Select preferred stages</option>
                               <option value="Pre-seed">Pre-seed</option>
@@ -1171,7 +1172,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="url"
                               value={investorProfile.website || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, website: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, website: e.target.value }))}
                               placeholder="https://yourwebsite.com"
                             />
                           </InputGroup>
@@ -1181,7 +1182,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="url"
                               value={investorProfile.linkedin || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, linkedin: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, linkedin: e.target.value }))}
                               placeholder="https://linkedin.com/in/yourprofile"
                             />
                           </InputGroup>
@@ -1191,7 +1192,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type="text"
                               value={investorProfile.location || ''}
-                              onChange={(e) => setInvestorProfile(prev => ({ ...prev, location: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvestorProfile(prev => ({ ...prev, location: e.target.value }))}
                               placeholder="City, Country"
                             />
                           </InputGroup>
@@ -1201,7 +1202,7 @@ const ProfileEditPage: React.FC = () => {
                               <Label>Investment Philosophy *</Label>
                               <TextArea
                                 value={investorProfile.description}
-                                onChange={(e) => setInvestorProfile(prev => ({ ...prev, description: e.target.value }))}
+                                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setInvestorProfile(prev => ({ ...prev, description: e.target.value }))}
                                 placeholder="Describe your investment philosophy, what you look for in startups, and how you prefer to work with founders..."
                               />
                             </InputGroup>
@@ -1221,8 +1222,8 @@ const ProfileEditPage: React.FC = () => {
                               <input
                                 type="text"
                                 value={newInvestmentFocus}
-                                onChange={(e) => setNewInvestmentFocus(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag('investor'))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewInvestmentFocus(e.target.value)}
+                                onKeyPress={(e: React.KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.preventDefault(), addTag('investor'))}
                                 placeholder="Add investment focus areas..."
                                 className="flex-1 bg-transparent border-none outline-none text-gray-200 placeholder-gray-400 min-w-32"
                               />
@@ -1325,7 +1326,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="text"
                                   value={month.monthName}
-                                  onChange={(e) => updateMonthlyData(index, 'monthName', e.target.value)}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'monthName', e.target.value)}
                                 />
                               </InputGroup>
 
@@ -1334,7 +1335,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.marketingSpend}
-                                  onChange={(e) => updateMonthlyData(index, 'marketingSpend', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'marketingSpend', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1343,7 +1344,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.burnRate}
-                                  onChange={(e) => updateMonthlyData(index, 'burnRate', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'burnRate', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1352,7 +1353,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.cac}
-                                  onChange={(e) => updateMonthlyData(index, 'cac', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'cac', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1364,7 +1365,7 @@ const ProfileEditPage: React.FC = () => {
                                   min="0"
                                   max="1"
                                   value={month.churnRate}
-                                  onChange={(e) => updateMonthlyData(index, 'churnRate', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'churnRate', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1373,7 +1374,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.arpu}
-                                  onChange={(e) => updateMonthlyData(index, 'arpu', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'arpu', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1382,7 +1383,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.teamSize}
-                                  onChange={(e) => updateMonthlyData(index, 'teamSize', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'teamSize', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1391,7 +1392,7 @@ const ProfileEditPage: React.FC = () => {
                                 <Input
                                   type="number"
                                   value={month.productImprovements}
-                                  onChange={(e) => updateMonthlyData(index, 'productImprovements', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'productImprovements', Number(e.target.value))}
                                 />
                               </InputGroup>
 
@@ -1403,7 +1404,7 @@ const ProfileEditPage: React.FC = () => {
                                   min="0"
                                   max="1"
                                   value={month.marketExpansion}
-                                  onChange={(e) => updateMonthlyData(index, 'marketExpansion', Number(e.target.value))}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateMonthlyData(index, 'marketExpansion', Number(e.target.value))}
                                 />
                               </InputGroup>
                             </div>
@@ -1428,7 +1429,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type={showPasswords.current ? 'text' : 'password'}
                               value={passwordData.currentPassword}
-                              onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
                               placeholder="Enter current password"
                             />
                             <button
@@ -1447,7 +1448,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type={showPasswords.new ? 'text' : 'password'}
                               value={passwordData.newPassword}
-                              onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
                               placeholder="Enter new password"
                             />
                             <button
@@ -1466,7 +1467,7 @@ const ProfileEditPage: React.FC = () => {
                             <Input
                               type={showPasswords.confirm ? 'text' : 'password'}
                               value={passwordData.confirmPassword}
-                              onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                               placeholder="Confirm new password"
                             />
                             <button

@@ -27,9 +27,10 @@ import InvestorAnalyticsPage from "./components/InvestorAnalyticsPage.tsx";
 
 const AppContent = () => {
   const location = useLocation();
-  const showNavigation = location.pathname !== "/" && 
-    location.pathname !== "/login" && 
-    location.pathname !== "/signup" && 
+  const showNavigation =
+    location.pathname !== "/" &&
+    location.pathname !== "/login" &&
+    location.pathname !== "/signup" &&
     location.pathname !== "/role-selection" &&
     location.pathname !== "/startup-details" &&
     location.pathname !== "/investor-details";
@@ -37,24 +38,24 @@ const AppContent = () => {
   // Show upgrade modal only when explicitly requested via sessionStorage
   const [showUpgradeModal, setShowUpgradeModal] = React.useState(false);
   React.useEffect(() => {
-    if (sessionStorage.getItem('showUpgradeModal') === '1') {
+    if (sessionStorage.getItem("showUpgradeModal") === "1") {
       // Check if user already has Premium plan
-      const currentPlan = localStorage.getItem('currentPlan');
-      if (currentPlan === 'Premium') {
+      const currentPlan = localStorage.getItem("currentPlan");
+      if (currentPlan === "Premium") {
         // Don't show upgrade modal for Premium users
-        sessionStorage.removeItem('showUpgradeModal');
+        sessionStorage.removeItem("showUpgradeModal");
         return;
       }
-      
+
       setTimeout(() => {
         setShowUpgradeModal(true);
-        sessionStorage.removeItem('showUpgradeModal');
+        sessionStorage.removeItem("showUpgradeModal");
       }, 1500);
     }
   }, [location.pathname]); // Re-run when location changes
   const handleCloseUpgradeModal = () => {
     setShowUpgradeModal(false);
-    sessionStorage.setItem('upgradeModalDismissed', '1');
+    sessionStorage.setItem("upgradeModalDismissed", "1");
   };
 
   return (

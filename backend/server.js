@@ -545,15 +545,9 @@ app.post('/api/auth/login', async (req, res) => {
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
-  }
-
+  if (!token) return res.sendStatus(401);
   jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key', (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
+    if (err) return res.sendStatus(403);
     req.user = user;
     next();
   });
@@ -1067,66 +1061,25 @@ app.get('/api/user/profile', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/user/upload-photo - Upload profile photo
+// POST /api/user/upload-photo
 app.post('/api/user/upload-photo', authenticateToken, upload.single('photo'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
     const database = await connectToDatabase();
     const userId = req.user.userId;
-    const user = await database.collection('users').findOne({ _id: new ObjectId(userId) });
-    
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Generate file URL
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
-    // Update user's profile photo
+    // Read file as base64
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const base64String = fileBuffer.toString('base64');
+    // Store in user profile
     await database.collection('users').updateOne(
       { _id: new ObjectId(userId) },
-      { 
-        $set: { 
-          profilePhoto: fileUrl,
-          photoUpdatedAt: new Date().toISOString()
-        } 
-      }
+      { $set: { profilePhoto: base64String, photoUpdatedAt: new Date().toISOString() } }
     );
-
-    // Also update role-specific profile if it exists
-    if (user.role === 'startup') {
-      await database.collection('startup_profiles').updateOne(
-        { userId: userId },
-        { 
-          $set: { 
-            logo: fileUrl,
-            updatedAt: new Date().toISOString()
-          } 
-        },
-        { upsert: true }
-      );
-    } else if (user.role === 'investor') {
-      await database.collection('investor_profiles').updateOne(
-        { userId: userId },
-        { 
-          $set: { 
-            avatar: fileUrl,
-            updatedAt: new Date().toISOString()
-          } 
-        },
-        { upsert: true }
-      );
-    }
-
-    res.json({
-      success: true,
-      message: 'Profile photo uploaded successfully',
-      photoUrl: fileUrl
-    });
-
+    // Optionally delete file from disk
+    fs.unlinkSync(req.file.path);
+    res.json({ success: true, base64: base64String });
   } catch (error) {
     console.error('Upload photo error:', error);
     res.status(500).json({ error: 'Failed to upload photo' });
