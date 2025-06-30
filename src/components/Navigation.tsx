@@ -7,6 +7,7 @@ const Navigation: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<"startup" | "investor" | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -41,9 +42,36 @@ const Navigation: React.FC = () => {
     getUserInfo();
   }, []);
 
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      try {
+        const response = await fetch("http://localhost:3001/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUserRole(data.role);
+        }
+      } catch (error) {
+        // ignore
+      }
+    };
+    fetchUserRole();
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/');
+  };
+
+  const handleAnalyticsClick = () => {
+    if (userRole === "investor") {
+      navigate("/investor-analytics");
+    } else {
+      navigate("/analytics");
+    }
   };
 
   const navItems = [
@@ -75,7 +103,27 @@ const Navigation: React.FC = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
-            {navItems.map((item) => (
+            <button
+              onClick={handleAnalyticsClick}
+              className={`relative text-sm font-medium transition-colors duration-200 ${
+                location.pathname === "/analytics" || location.pathname === "/investor-analytics"
+                  ? "text-purple-400"
+                  : "text-gray-300 hover:text-purple-400"
+              }`}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            >
+              <span className="relative">
+                Analytics
+                <span
+                  className={`absolute -bottom-1 left-0 w-full h-0.5 bg-purple-400 transform origin-left transition-transform duration-200 ${
+                    location.pathname === "/analytics" || location.pathname === "/investor-analytics"
+                      ? "scale-x-100"
+                      : "scale-x-0"
+                  }`}
+                />
+              </span>
+            </button>
+            {navItems.filter(item => item.name !== "Analytics").map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -172,7 +220,21 @@ const Navigation: React.FC = () => {
           }`}
         >
           <div className="space-y-1">
-            {navItems.map((item) => (
+            <button
+              onClick={() => {
+                handleAnalyticsClick();
+                setIsMobileMenuOpen(false);
+              }}
+              className={`block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                location.pathname === "/analytics" || location.pathname === "/investor-analytics"
+                  ? "text-purple-400 bg-purple-900/20"
+                  : "text-gray-300 hover:text-purple-400 hover:bg-purple-900/10"
+              }`}
+              style={{ background: "none", border: "none", textAlign: "left", width: "100%" }}
+            >
+              Analytics
+            </button>
+            {navItems.filter(item => item.name !== "Analytics").map((item) => (
               <Link
                 key={item.path}
                 to={item.path}

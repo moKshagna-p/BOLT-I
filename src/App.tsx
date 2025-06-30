@@ -23,6 +23,7 @@ import VoiceStartupAdvisor from "./components/VoiceStartupAdvisor";
 import PaymentPage from "./components/PaymentPage";
 import PaymentsPage from "./components/PaymentsPage";
 import UpgradeModal from './components/UpgradeModal';
+import InvestorAnalyticsPage from "./components/InvestorAnalyticsPage.tsx";
 
 const AppContent = () => {
   const location = useLocation();
@@ -196,6 +197,14 @@ const AppContent = () => {
             element={
               <PageTransition>
                 <PaymentsPage />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/investor-analytics"
+            element={
+              <PageTransition>
+                <InvestorAnalyticsPage />
               </PageTransition>
             }
           />
