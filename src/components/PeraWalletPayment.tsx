@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { PeraWalletConnect } from '@perawallet/connect';
+import React, { useState, useEffect } from "react";
+import { PeraWalletConnect } from "@perawallet/connect";
+import { motion } from "framer-motion";
 
-const RECEIVER_ADDRESS = 'ECJYSFKHAZI7LFF5WD2JYFH67GXYTFQ4M2MQ32ZM3HTIY3DYDQA6IUBGCU'; // Replace with your Algorand address
+const RECEIVER_ADDRESS =
+  "ECJYSFKHAZI7LFF5WD2JYFH67GXYTFQ4M2MQ32ZM3HTIY3DYDQA6IUBGCU"; // Replace with your Algorand address
 const USD_TO_ALGO = 0.6; // Placeholder conversion rate, replace with real-time rate if needed
 
 interface PeraWalletPaymentProps {
@@ -11,9 +13,12 @@ interface PeraWalletPaymentProps {
 
 const peraWallet = new PeraWalletConnect();
 
-const PeraWalletPayment: React.FC<PeraWalletPaymentProps> = ({ amountUsd, onPaymentSuccess }) => {
+const PeraWalletPayment: React.FC<PeraWalletPaymentProps> = ({
+  amountUsd,
+  onPaymentSuccess,
+}) => {
   const [account, setAccount] = useState<string | null>(null);
-  const [algoAmount, setAlgoAmount] = useState('');
+  const [algoAmount, setAlgoAmount] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [txId, setTxId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -28,69 +33,102 @@ const PeraWalletPayment: React.FC<PeraWalletPaymentProps> = ({ amountUsd, onPaym
       setAccount(accounts[0]);
       setError(null);
     } catch (err: any) {
-      setError('Failed to connect Pera Wallet');
+      setError("Failed to connect Pera Wallet");
     }
   };
 
   const sendPayment = async () => {
     if (!account) {
-      setError('Please connect your wallet first.');
+      setError("Please connect your wallet first.");
       return;
     }
-    setStatus('Pending...');
+    setStatus("Pending...");
     setError(null);
     setTxId(null);
     try {
       // This is a placeholder. In a real app, you would use Algorand SDK to build and sign the transaction.
       // For now, just simulate a successful transaction.
       setTimeout(() => {
-        setTxId('SIMULATED_TX_ID');
-        setStatus('Payment successful!');
-        if (onPaymentSuccess) onPaymentSuccess('SIMULATED_TX_ID');
+        setTxId("SIMULATED_TX_ID");
+        setStatus("Payment successful!");
+        if (onPaymentSuccess) onPaymentSuccess("SIMULATED_TX_ID");
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Transaction failed');
+      setError(err.message || "Transaction failed");
       setStatus(null);
     }
   };
 
+  const buttonBaseClasses =
+    "w-full font-semibold py-4 px-8 rounded-full transition-all duration-300 backdrop-blur-sm relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/10 before:to-transparent before:rounded-full hover:before:from-white/20";
+
   return (
-    <div className="bg-gray-900 p-6 rounded-lg shadow-lg w-full max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-4 text-white">Pay with Pera Wallet</h2>
+    <div className="w-full space-y-6">
+      <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-indigo-300 mb-6">
+        Pay with Pera Wallet
+      </h2>
+
       {!account ? (
-        <button
+        <motion.button
           onClick={connectWallet}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 w-full"
+          className={`${buttonBaseClasses} bg-gradient-to-r from-blue-900/30 to-indigo-900/30 hover:from-blue-800/40 hover:to-indigo-800/40 text-white border border-blue-700 shadow-lg shadow-blue-900/10`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
         >
           Connect Pera Wallet
-        </button>
+        </motion.button>
       ) : (
-        <div className="mb-4 text-green-400">Connected: {account}</div>
+        <div className="p-4 rounded-full bg-[#0a0a0a]/60 border border-blue-800/30 text-blue-400 mb-6 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent">
+          Connected: {account}
+        </div>
       )}
-      <div className="mb-2 text-gray-300">Amount to pay (USD): <span className="text-white font-bold">${amountUsd}</span></div>
-      <input
-        type="number"
-        value={algoAmount}
-        className="w-full p-2 mb-4 rounded bg-gray-800 text-white border border-gray-700"
-        disabled
-      />
-      <div className="mb-4 text-gray-400 text-xs">(ALGO amount is approximate, based on current conversion rate)</div>
-      <button
-        onClick={sendPayment}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
-        disabled={!account}
-      >
-        Send Payment
-      </button>
-      {status && <div className="mt-4 text-blue-400">{status}</div>}
+
+      <div className="space-y-4">
+        <div className="bg-gradient-to-br from-[#0a0a0a]/80 to-blue-950/10 rounded-2xl p-6 border border-blue-900/30">
+          <div className="text-gray-400 mb-2 text-sm">Amount to pay (USD)</div>
+          <div className="text-2xl font-bold text-white mb-4">${amountUsd}</div>
+
+          <div className="relative">
+            <div className="text-gray-400 mb-2 text-sm">ALGO Amount</div>
+            <div className="text-lg text-blue-400 font-mono p-4 rounded-full bg-[#0a0a0a]/80 border border-blue-800/30 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent">
+              {algoAmount}
+            </div>
+            <div className="mt-2 text-gray-500 text-xs">
+              (ALGO amount is approximate, based on current conversion rate)
+            </div>
+          </div>
+        </div>
+
+        <motion.button
+          onClick={sendPayment}
+          className={`${buttonBaseClasses} bg-gradient-to-r from-blue-900/30 to-indigo-900/30 hover:from-blue-800/40 hover:to-indigo-800/40 text-white border border-blue-700 shadow-lg shadow-blue-900/10`}
+          disabled={!account}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          Send Payment
+        </motion.button>
+      </div>
+
+      {status && (
+        <div className="mt-4 text-blue-400 p-4 rounded-full bg-blue-900/20 border border-blue-800/30 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent">
+          {status}
+        </div>
+      )}
+
       {txId && (
-        <div className="mt-2 text-green-400 break-all">
+        <div className="mt-4 text-green-400 p-4 rounded-full bg-green-900/20 border border-green-800/30 break-all relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent">
           Transaction ID: <span className="underline">{txId}</span>
         </div>
       )}
-      {error && <div className="mt-4 text-red-400">{error}</div>}
+
+      {error && (
+        <div className="mt-4 text-red-400 p-4 rounded-full bg-red-900/20 border border-red-800/30 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/5 before:to-transparent">
+          {error}
+        </div>
+      )}
     </div>
   );
 };
 
-export default PeraWalletPayment; 
+export default PeraWalletPayment;
