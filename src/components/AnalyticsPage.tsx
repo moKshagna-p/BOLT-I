@@ -224,6 +224,19 @@ function simulateAdvancedGrowth(
   return results;
 }
 
+const getEmptyMonth = (index: number) => ({
+  monthName: `Month ${index + 1}`,
+  marketingSpend: 3000,
+  burnRate: 8000,
+  cac: 30,
+  churnRate: 0.05,
+  arpu: 20,
+  teamSize: 3,
+  productImprovements: 0,
+  marketExpansion: 0,
+  fundingRound: null
+});
+
 const AnalyticsPage: React.FC = () => {
   const { startupId } = useParams();
   const [forecastMonthsCount, setForecastMonthsCount] = useState(DEFAULT_FORECAST_MONTHS);
@@ -239,6 +252,9 @@ const AnalyticsPage: React.FC = () => {
     initialTeamSize: DEFAULTS.initialTeamSize,
   });
   const [startupName, setStartupName] = useState<string>("");
+  const [showAddMonth, setShowAddMonth] = useState(false);
+  const [newMonth, setNewMonth] = useState<any>(getEmptyMonth(monthsData.length));
+  const [addMonthLoading, setAddMonthLoading] = useState(false);
 
   // Fetch monthly data from MongoDB on component mount
   useEffect(() => {
@@ -318,6 +334,44 @@ const AnalyticsPage: React.FC = () => {
     setSimResult(result);
     setShowTable(true);
     setError(null);
+  };
+
+  // Add Month handler
+  const handleAddMonth = () => {
+    setNewMonth(getEmptyMonth(monthsData.length));
+    setShowAddMonth(true);
+  };
+
+  const handleNewMonthChange = (field: string, value: any) => {
+    setNewMonth((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddMonthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddMonthLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+      // Append new month to monthsData
+      const updatedMonths = [...monthsData, newMonth];
+      const response = await fetch('http://localhost:3001/api/user/startup-monthly-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ monthlyData: updatedMonths })
+      });
+      if (!response.ok) throw new Error('Failed to add month');
+      setShowAddMonth(false);
+      setNewMonth(getEmptyMonth(updatedMonths.length));
+      // Refresh monthsData
+      setMonthsData(updatedMonths);
+    } catch (err) {
+      alert('Failed to add month.');
+    } finally {
+      setAddMonthLoading(false);
+    }
   };
 
   if (loading) {
@@ -430,7 +484,73 @@ const AnalyticsPage: React.FC = () => {
             >
               {showTable ? "Hide Table" : "Show Table"}
             </button>
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow"
+              onClick={handleAddMonth}
+            >
+              + Add Month
+            </button>
           </div>
+
+          {/* Add Month Modal */}
+          {showAddMonth && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+              <form onSubmit={handleAddMonthSubmit} className="bg-[#18181b] rounded-xl p-8 w-full max-w-lg space-y-4 relative">
+                <button type="button" className="absolute top-2 right-4 text-gray-400 text-2xl" onClick={() => setShowAddMonth(false)}>&times;</button>
+                <h2 className="text-xl font-bold text-gray-100 mb-2">Add New Month</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Month Name</label>
+                    <input type="text" value={newMonth.monthName} onChange={e => handleNewMonthChange('monthName', e.target.value)} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Marketing Spend</label>
+                    <input type="number" value={newMonth.marketingSpend} onChange={e => handleNewMonthChange('marketingSpend', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Burn Rate</label>
+                    <input type="number" value={newMonth.burnRate} onChange={e => handleNewMonthChange('burnRate', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">CAC</label>
+                    <input type="number" value={newMonth.cac} onChange={e => handleNewMonthChange('cac', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Churn Rate</label>
+                    <input type="number" value={newMonth.churnRate} onChange={e => handleNewMonthChange('churnRate', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">ARPU</label>
+                    <input type="number" value={newMonth.arpu} onChange={e => handleNewMonthChange('arpu', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Team Size</label>
+                    <input type="number" value={newMonth.teamSize} onChange={e => handleNewMonthChange('teamSize', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Product Improvements</label>
+                    <input type="number" value={newMonth.productImprovements} onChange={e => handleNewMonthChange('productImprovements', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Market Expansion</label>
+                    <input type="number" value={newMonth.marketExpansion} onChange={e => handleNewMonthChange('marketExpansion', Number(e.target.value))} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1" />
+                  </div>
+                  <div>
+                    <label className="block text-gray-300 text-xs mb-1">Funding Round</label>
+                    <select value={newMonth.fundingRound || ""} onChange={e => handleNewMonthChange('fundingRound', e.target.value || null)} className="w-full bg-[#23232b] text-gray-100 rounded px-2 py-1">
+                      <option value="">None</option>
+                      <option value="seed">Seed</option>
+                      <option value="seriesA">Series A</option>
+                      <option value="seriesB">Series B</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg" disabled={addMonthLoading}>
+                  {addMonthLoading ? 'Adding...' : 'Add Month'}
+                </button>
+              </form>
+            </div>
+          )}
 
           {/* Display loaded monthly data */}
           <div className="mb-10">
