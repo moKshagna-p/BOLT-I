@@ -188,6 +188,32 @@ const AddMonthButton = styled.button`
   }
 `;
 
+const EquitySection = styled.div`
+  background: rgba(39, 39, 42, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const EquityRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const ErrorText = styled.div`
+  color: #ef4444;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+`;
+
+type EquityHolder = {
+  name: string;
+  percentage: number;
+};
+
 const StartupDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -242,6 +268,12 @@ const StartupDetailsPage: React.FC = () => {
     }
   ]);
 
+  const [equityStructure, setEquityStructure] = useState<EquityHolder[]>([
+    { name: "Owner", percentage: 100 }
+  ]);
+  const [lastValuation, setLastValuation] = useState<string>("");
+  const [equityError, setEquityError] = useState<string>("");
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
@@ -283,9 +315,37 @@ const StartupDetailsPage: React.FC = () => {
     }
   };
 
+  const handleEquityChange = (index: number, field: keyof EquityHolder, value: string | number) => {
+    const updated = [...equityStructure];
+    if (field === "percentage") {
+      updated[index].percentage = Number(value);
+    } else if (field === "name") {
+      updated[index].name = String(value);
+    }
+    setEquityStructure(updated);
+  };
+
+  const addEquityHolder = () => {
+    setEquityStructure([...equityStructure, { name: "", percentage: 0 }]);
+  };
+
+  const removeEquityHolder = (index: number) => {
+    if (equityStructure.length > 1) {
+      setEquityStructure(equityStructure.filter((_, i) => i !== index));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate equity structure
+    const totalEquity = equityStructure.reduce((sum, eq) => sum + Number(eq.percentage), 0);
+    if (totalEquity !== 100) {
+      setEquityError("Total equity must be exactly 100%.");
+      return;
+    }
+    setEquityError("");
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -304,7 +364,9 @@ const StartupDetailsPage: React.FC = () => {
         },
         body: JSON.stringify({
           ...formData,
-          monthlyData: monthlyData
+          monthlyData: monthlyData,
+          equityStructure: equityStructure,
+          lastValuation: lastValuation ? Number(lastValuation) : null
         })
       });
 
@@ -648,6 +710,61 @@ const StartupDetailsPage: React.FC = () => {
                 ))}
               </MonthlyDataGrid>
             </MonthlyDataCard>
+
+            {/* Equity Structure Section */}
+            <EquitySection>
+              <h3 className="text-lg font-semibold text-gray-100 mb-2">Equity Structure</h3>
+              <p className="text-gray-400 text-sm mb-4">Specify the ownership breakdown. Total must be 100%.</p>
+              {equityError && <ErrorText>{equityError}</ErrorText>}
+              {equityStructure.map((holder, idx) => (
+                <EquityRow key={idx}>
+                  <Input
+                    type="text"
+                    placeholder="Name (e.g., Owner, Co-founder, Investor)"
+                    value={holder.name}
+                    onChange={e => handleEquityChange(idx, "name", e.target.value)}
+                    required
+                    style={{ flex: 2 }}
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    placeholder="%"
+                    value={holder.percentage}
+                    onChange={e => handleEquityChange(idx, "percentage", e.target.value)}
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  {equityStructure.length > 1 && (
+                    <RemoveButton type="button" onClick={() => removeEquityHolder(idx)}>
+                      <Trash2 className="w-3 h-3" />
+                    </RemoveButton>
+                  )}
+                </EquityRow>
+              ))}
+              <AddMonthButton type="button" onClick={addEquityHolder} style={{ marginTop: 0 }}>
+                <Plus className="w-4 h-4" /> Add Stakeholder
+              </AddMonthButton>
+              <div className="mt-2 text-gray-400 text-xs">
+                Total: {equityStructure.reduce((sum, eq) => sum + Number(eq.percentage), 0)}%
+              </div>
+            </EquitySection>
+
+            {/* Last Valuation Section */}
+            <InputGroup>
+              <Label>Last Valuation ($)</Label>
+              <Input
+                type="number"
+                min={0}
+                step={1000}
+                name="lastValuation"
+                value={lastValuation}
+                onChange={e => setLastValuation(e.target.value)}
+                placeholder="e.g., 1000000"
+              />
+            </InputGroup>
 
             <SubmitButton
               type="submit"
