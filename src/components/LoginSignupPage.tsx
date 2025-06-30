@@ -172,7 +172,7 @@ const LoginSignupPage: React.FC = () => {
         navigate("/role-selection");
       } else {
         sessionStorage.setItem('showUpgradeModal', '1');
-        navigate("/analytics");
+        navigate("/voice-advisor");
       }
 
     } catch (err) {
