@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import  { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { motion, AnimatePresence } from "framer-motion";
@@ -464,7 +464,7 @@ const ChatPage: React.FC = () => {
       // Upload attachments first if any
       const uploadedAttachments = await Promise.all(
         attachments.map(async (file) => ({
-          type: file.type.startsWith("image/") ? "image" : "file",
+          type: file.type.startsWith("image/") ? "image" as const : "file" as const,
           name: file.name,
           url: URL.createObjectURL(file),
         }))
@@ -531,7 +531,7 @@ const ChatPage: React.FC = () => {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+      setAttachments((prev) => [...prev, ...Array.from(e.target.files as FileList)]);
     }
   };
 
@@ -702,23 +702,25 @@ const ChatPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
-                    <motion.button
-                      onClick={handleInvestClick}
-                      whileHover={{
-                        scale: 1.05,
-                        boxShadow: "0 0 20px rgba(139, 92, 246, 0.5)",
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      className="invest-button px-6 py-2 rounded-full bg-gradient-to-r from-purple-600/80 to-purple-800/80 text-white font-medium backdrop-blur-sm border border-purple-500/30 shadow-lg relative overflow-hidden"
-                      style={{
-                        WebkitBackdropFilter: "blur(8px)",
-                        backdropFilter: "blur(8px)",
-                      }}
-                    >
-                      <span className="relative z-10">Invest Now</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-purple-800/20 animate-pulse" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-purple-600/10 transform rotate-180" />
-                    </motion.button>
+                    {userRole !== 'startup' && (
+                      <motion.button
+                        onClick={handleInvestClick}
+                        whileHover={{
+                          scale: 1.05,
+                          boxShadow: "0 0 20px rgba(139, 92, 246, 0.5)",
+                        }}
+                        whileTap={{ scale: 0.95 }}
+                        className="invest-button px-6 py-2 rounded-full bg-gradient-to-r from-purple-600/80 to-purple-800/80 text-white font-medium backdrop-blur-sm border border-purple-500/30 shadow-lg relative overflow-hidden"
+                        style={{
+                          WebkitBackdropFilter: "blur(8px)",
+                          backdropFilter: "blur(8px)",
+                        }}
+                      >
+                        <span className="relative z-10">Invest Now</span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-purple-800/20 animate-pulse" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-purple-400/10 to-purple-600/10 transform rotate-180" />
+                      </motion.button>
+                    )}
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
@@ -925,7 +927,7 @@ const ChatPage: React.FC = () => {
           </div>
         </motion.div>
       </div>
-      <style jsx>{`
+      <style>{`
         .invest-button {
           transition: all 0.3s ease;
         }
