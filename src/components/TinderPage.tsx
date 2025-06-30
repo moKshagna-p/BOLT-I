@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import Stack from './Stack';
 
 const Card = styled(motion.div)`
   position: absolute;
@@ -503,6 +504,9 @@ const TinderPage: React.FC = () => {
 
   // Debug log for state
   console.log("TinderPage state:", { profiles, loading, error, userRole });
+
+  // Map profiles to Stack's expected format
+  const images = profiles.map((profile) => ({ id: profile.id, img: profile.image }));
 
   if (!userRole || loading) {
     return (
