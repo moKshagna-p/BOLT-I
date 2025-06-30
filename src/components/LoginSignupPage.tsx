@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import * as React from "react";
+import { useState } from "react";
 import styled from "styled-components";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import loginSignupVideo from '../loginsignup.mp4';
+import { User, Lock, LogIn, UserPlus } from 'lucide-react';
 
 const Card = styled(motion.div)`
   background: rgba(18, 18, 18, 0.85);
@@ -30,7 +33,7 @@ const ToggleButton = styled.button<{ $active?: boolean }>`
   color: ${({ $active }) => ($active ? "#fff" : "#a78bfa")};
   background: ${({ $active }) =>
     $active
-      ? "linear-gradient(90deg, #a21caf 0%, #7c3aed 100%)"
+      ? "#7c3aed"
       : "transparent"};
   transition: background 0.2s, color 0.2s;
   border: none;
@@ -72,7 +75,7 @@ const Label = styled.label<{ $active?: boolean }>`
 const GradientButton = styled.button`
   width: 100%;
   padding: 0.85rem 0;
-  background: linear-gradient(90deg, #a21caf 0%, #7c3aed 100%);
+  background: #7c3aed;
   color: #fff;
   font-weight: 700;
   border: none;
@@ -82,12 +85,11 @@ const GradientButton = styled.button`
   box-shadow: 0 2px 8px 0 rgba(139, 92, 246, 0.18);
   cursor: pointer;
   transition: background 0.2s, transform 0.2s, opacity 0.2s;
-  
   &:hover:not(:disabled) {
-    background: linear-gradient(90deg, #7c3aed 0%, #a21caf 100%);
+    background: #6d28d9;
     transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 4px 16px 0 rgba(124, 58, 237, 0.18);
   }
-  
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -182,86 +184,118 @@ const LoginSignupPage: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#121212] relative overflow-hidden">
-      {/* Background gradient beam */}
-      <div
-        className="absolute inset-0 rotate-45 opacity-40 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(90deg, transparent 0%, #6B21A8 50%, transparent 100%)",
-          filter: "blur(80px)",
-          transform: "translateY(-50%) rotate(-45deg) scale(2)",
-        }}
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        src={loginSignupVideo}
       />
-      {/* Subtle overlay for depth */}
-      <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px] pointer-events-none" />
-      <div className="relative z-10 w-full max-w-md mx-auto">
-        <Card
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <Toggle>
-            <ToggleButton $active={mode === "login"} onClick={() => setMode("login")}>Login</ToggleButton>
-            <ToggleButton $active={mode === "signup"} onClick={() => setMode("signup")}>Sign Up</ToggleButton>
-          </Toggle>
-          
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm"
-            >
-              {error}
-            </motion.div>
-          )}
-
-          <form onSubmit={handleSubmit}>
+      {/* Dark purple tint overlay for readability */}
+      <div className="fixed inset-0 z-10 pointer-events-none" style={{
+        background: 'linear-gradient(90deg, #1e1b4b 0%, #312e81 100%)',
+        opacity: 0.93,
+        mixBlendMode: 'multiply',
+        backdropFilter: 'blur(2px)'
+      }} />
+      {/* Subtle overlay for depth (optional, like ResourcesPage) */}
+      <div className="absolute inset-0 bg-[#121212]/50 backdrop-blur-[1px] pointer-events-none z-20" />
+      <div className="relative z-30 w-full max-w-md mx-auto flex flex-col items-center">
+        <h1 className="text-5xl font-extrabold text-center mb-2 bg-gradient-to-r from-white to-white bg-clip-text text-transparent font-poppins drop-shadow-none tracking-tight" style={{letterSpacing: '-0.03em'}}>PitchNest</h1>
+        <p className="text-lg text-white font-medium text-center mb-8 font-poppins" style={{letterSpacing: '-0.01em'}}>Welcome to the future of startup & investor connections</p>
+        {/* Toggle: white text, white underline for active */}
+        <div className="flex w-full justify-center gap-2 mb-8">
+          <button
+            className={`px-6 py-2 text-lg font-semibold font-poppins transition-colors border-b-2 ${mode === 'login' ? 'border-white text-white' : 'border-transparent text-white/60 hover:text-white'}`}
+            style={{background: 'none', outline: 'none', boxShadow: 'none'}}
+            onClick={() => setMode('login')}
+          >
+            Login
+          </button>
+          <button
+            className={`px-6 py-2 text-lg font-semibold font-poppins transition-colors border-b-2 ${mode === 'signup' ? 'border-white text-white' : 'border-transparent text-white/60 hover:text-white'}`}
+            style={{background: 'none', outline: 'none', boxShadow: 'none'}}
+            onClick={() => setMode('signup')}
+          >
+            Sign Up
+          </button>
+        </div>
+        {/* Error message */}
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex items-center gap-2 p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm w-full max-w-md"
+          >
+            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0Z"/></svg>
+            {error}
+          </motion.div>
+        )}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="w-full max-w-md flex flex-col gap-6 mt-2">
+          <InputGroup>
+            <Input
+              name="email"
+              type="email"
+              value={fields.email}
+              onChange={handleChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              required
+              disabled={loading}
+              style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+              className="focus:ring-2 focus:ring-white focus:border-white transition-all"
+            />
+            <Label $active={focus.email || fields.email !== ""} style={{ color: '#fff' }}>Email</Label>
+          </InputGroup>
+          <InputGroup>
+            <Input
+              name="password"
+              type="password"
+              value={fields.password}
+              onChange={handleChange}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              required
+              disabled={loading}
+              style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+              className="focus:ring-2 focus:ring-white focus:border-white transition-all"
+            />
+            <Label $active={focus.password || fields.password !== ""} style={{ color: '#fff' }}>Password</Label>
+          </InputGroup>
+          {mode === "signup" && (
             <InputGroup>
               <Input
-                name="email"
-                type="email"
-                value={fields.email}
-                onChange={handleChange}
-                onFocus={handleFocus}
-                onBlur={handleBlur}
-                required
-                disabled={loading}
-              />
-              <Label $active={focus.email || fields.email !== ""}>Email</Label>
-            </InputGroup>
-            <InputGroup>
-              <Input
-                name="password"
+                name="confirmPassword"
                 type="password"
-                value={fields.password}
+                value={fields.confirmPassword}
                 onChange={handleChange}
                 onFocus={handleFocus}
                 onBlur={handleBlur}
                 required
                 disabled={loading}
+                style={{ paddingLeft: '1rem', background: 'transparent', border: '1.5px solid #fff', color: '#fff', fontSize: '1.1rem', borderRadius: '0.75rem', boxShadow: 'none' }}
+                className="focus:ring-2 focus:ring-white focus:border-white transition-all"
               />
-              <Label $active={focus.password || fields.password !== ""}>Password</Label>
+              <Label $active={focus.confirmPassword || fields.confirmPassword !== ""} style={{ color: '#fff' }}>Confirm Password</Label>
             </InputGroup>
-            {mode === "signup" && (
-              <InputGroup>
-                <Input
-                  name="confirmPassword"
-                  type="password"
-                  value={fields.confirmPassword}
-                  onChange={handleChange}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  required
-                  disabled={loading}
-                />
-                <Label $active={focus.confirmPassword || fields.confirmPassword !== ""}>Confirm Password</Label>
-              </InputGroup>
+          )}
+          <GradientButton type="submit" disabled={loading} className="flex items-center justify-center gap-2 mt-2 w-full text-lg font-bold font-poppins shadow-lg rounded-xl transition-all" style={{background: '#fff', color: '#121212', borderRadius: '0.75rem', boxShadow: '0 4px 24px 0 #fff4'}}>
+            {loading ? (
+              <span>Loading...</span>
+            ) : mode === "login" ? (
+              <>
+                <LogIn className="w-5 h-5" /> Login
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-5 h-5" /> Sign Up
+              </>
             )}
-            <GradientButton type="submit" disabled={loading}>
-              {loading ? "Loading..." : mode === "login" ? "Login" : "Sign Up"}
-            </GradientButton>
-          </form>
-        </Card>
+          </GradientButton>
+        </form>
       </div>
     </div>
   );

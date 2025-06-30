@@ -22,8 +22,6 @@ const LandingPage: FC = () => {
         className="fixed inset-0 w-full h-full object-cover z-0"
         src={bgVideo}
       />
-      {/* Overlay for readability */}
-      <div className="fixed inset-0 bg-black/60 z-10 pointer-events-none" />
 
       {/* Content Overlay */}
       <div className="relative z-20 min-h-screen flex flex-col items-center justify-center">

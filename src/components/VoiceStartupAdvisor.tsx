@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import styled from "styled-components";
+import Orb from './orb';
 
 // Type declarations for SpeechRecognition
 declare global {
@@ -876,23 +877,8 @@ const VoiceStartupAdvisor: React.FC<VoiceStartupAdvisorProps> = ({
           transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
           className="flex justify-center mb-12"
         >
-          <div className="avatar-container glow-effect">
-            <div
-              className={`avatar ${
-                isSpeaking ? "speaking" : isListening ? "listening" : ""
-              }`}
-            >
-              <Bot className="avatar-icon" />
-              {(isSpeaking || isLoadingAudio) && (
-                <div className="speech-bubbles">
-                  <div className="speech-bubble"></div>
-                  <div className="speech-bubble"></div>
-                  <div className="speech-bubble"></div>
-                  <div className="speech-bubble"></div>
-                  <div className="speech-bubble"></div>
-                </div>
-              )}
-            </div>
+          <div className="avatar-container">
+            <Orb hue={270} />
           </div>
         </motion.div>
 
