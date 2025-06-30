@@ -63,6 +63,7 @@ type StackProps = {
   sendToBackOnClick?: boolean;
   onSwipeLeft?: (card: CardData) => void;
   onSwipeRight?: (card: CardData) => void;
+  onCardClick?: (card: CardData) => void;
 };
 
 export default function Stack({
@@ -74,6 +75,7 @@ export default function Stack({
   sendToBackOnClick = false,
   onSwipeLeft,
   onSwipeRight,
+  onCardClick,
 }: StackProps) {
   const [cards, setCards] = useState<CardData[]>(
     cardsData.length
@@ -124,8 +126,11 @@ export default function Stack({
                 borderColor: 'rgba(139,92,246,0.2)',
                 background: 'rgba(0,0,0,0.75)',
                 boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18), 0 4px 16px 0 rgba(139,92,246,0.1)',
+                width: cardDimensions.width,
+                height: cardDimensions.height,
+                position: 'relative',
               }}
-              onClick={() => sendToBackOnClick && sendToBack(card.id)}
+              onClick={() => onCardClick && onCardClick(card)}
               animate={{
                 rotateZ: (cards.length - index - 1) * 4 + randomRotate,
                 scale: 1 + index * 0.06 - cards.length * 0.06,
@@ -136,11 +141,6 @@ export default function Stack({
                 type: "spring",
                 stiffness: animationConfig.stiffness,
                 damping: animationConfig.damping,
-              }}
-              style={{
-                width: cardDimensions.width,
-                height: cardDimensions.height,
-                position: 'relative',
               }}
             >
               <img
@@ -154,7 +154,7 @@ export default function Stack({
                   style={{
                     borderBottomLeftRadius: 16,
                     borderBottomRightRadius: 16,
-                    background: 'linear-gradient(90deg, #7c3aedcc 0%, #6366f1cc 100%)',
+                    background: 'linear-gradient(90deg, #3b2170ee 0%, #312e81ee 100%)',
                   }}
                 >
                   {card.name && (

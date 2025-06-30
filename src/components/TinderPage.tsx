@@ -141,7 +141,7 @@ const Tag = styled.span`
   padding: 0.5rem 1rem;
   background: rgba(139, 92, 246, 0.15);
   border: 1px solid rgba(139, 92, 246, 0.3);
-  color: #c084fc;
+  color:rgb(57, 11, 103);
   font-size: 0.75rem;
   border-radius: 1rem;
   font-weight: 500;
@@ -156,7 +156,7 @@ const Tag = styled.span`
 `;
 
 const GradientText = styled.h1`
-  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);
+  background: linear-gradient(135deg,rgb(27, 8, 72) 0%,rgb(32, 9, 54) 50%,rgb(33, 14, 51) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -193,7 +193,7 @@ const GlowEffect = styled.div`
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #8b5cf6, #a855f7, #c084fc, #8b5cf6);
+    background: "linear-gradient(90deg, transparent 0%, #6B21A8 50%, transparent 100%)"
     border-radius: inherit;
     z-index: -1;
     opacity: 0;
@@ -268,7 +268,7 @@ const MatchModal = styled(motion.div)`
     font-size: 2rem;
     font-weight: bold;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 50%, #c084fc 100%);
+    background: linear-gradient(135deg,rgb(25, 9, 62) 0%,rgb(37, 4, 68) 50%,rgb(36, 6, 65) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -276,11 +276,11 @@ const MatchModal = styled(motion.div)`
   }
   .modal-desc {
     font-size: 1.1rem;
-    color: #c4b5fd;
+    color:rgb(20, 8, 70);
     margin-bottom: 2rem;
   }
   .modal-btn {
-    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    background: linear-gradient(135deg,rgb(17, 3, 52) 0%,rgb(52, 18, 84) 100%);
     color: #fff;
     border: none;
     border-radius: 1.5rem;
@@ -288,11 +288,11 @@ const MatchModal = styled(motion.div)`
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.15);
+    box-shadow: 0 4px 20px rgba(18, 3, 54, 0.15);
     transition: all 0.2s;
   }
   .modal-btn:hover {
-    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 100%);
+    background: linear-gradient(135deg,rgb(51, 11, 88) 0%,rgb(25, 11, 59) 100%);
     transform: scale(1.05);
   }
 `;
@@ -699,22 +699,8 @@ function TinderPage() {
               cardsData={images}
               onSwipeLeft={handleDislike}
               onSwipeRight={handleLike}
+              onCardClick={(card) => navigate(`/analytics/${card.id}`)}
             />
-          </div>
-          {/* Enhanced Stats */}
-          <div className="flex justify-center mt-6">
-            <div className="bg-black/60 border border-purple-400/20 rounded-2xl px-8 py-4 shadow-lg backdrop-blur-md flex gap-12">
-              <div className="flex flex-col items-center">
-                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse mb-1"></div>
-                <div className="text-green-400 font-bold text-xl">{likedCards.length}</div>
-                <div className="text-gray-400 font-medium text-sm">Liked</div>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mb-1"></div>
-                <div className="text-red-400 font-bold text-xl">{dislikedCards.length}</div>
-                <div className="text-gray-400 font-medium text-sm">Passed</div>
-              </div>
-            </div>
           </div>
         </div>
       </GlobalStyle>
