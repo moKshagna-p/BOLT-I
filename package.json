@@ -12,6 +12,7 @@
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
+    "@headlessui/react": "^2.2.4",
     "@perawallet/connect": "^1.4.2",
     "@types/react-router-dom": "^5.3.3",
     "@types/styled-components": "^5.1.34",
