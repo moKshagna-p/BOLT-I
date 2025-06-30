@@ -119,7 +119,12 @@ export default function Stack({
             onSwipeRight={onSwipeRight ? () => onSwipeRight(card) : undefined}
           >
             <motion.div
-              className="rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/10"
+              className="rounded-2xl overflow-hidden"
+              style={{
+                borderColor: 'rgba(139,92,246,0.2)',
+                background: 'rgba(0,0,0,0.75)',
+                boxShadow: '0 8px 32px 0 rgba(31,38,135,0.18), 0 4px 16px 0 rgba(139,92,246,0.1)',
+              }}
               onClick={() => sendToBackOnClick && sendToBack(card.id)}
               animate={{
                 rotateZ: (cards.length - index - 1) * 4 + randomRotate,

@@ -656,68 +656,41 @@ function TinderPage() {
         {/* Match Modal */}
         <AnimatePresence>
           {showMatchModal && matchedProfile && (
-            <MatchModal
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             >
-              <div className="modal-content">
-                <CheckCircle className="mx-auto mb-4 text-green-400" size={56} />
-                <div className="modal-title">It's a Match!</div>
-                <div className="modal-desc">
-                  You and{" "}
-                  <span className="font-bold text-purple-300">
-                    {matchedProfile.name}
-                  </span>{" "}
-                  have liked each other.
-                  <br />
-                  Start a conversation now!
-                </div>
+              <div className="bg-gradient-to-br from-purple-700/80 to-blue-700/80 rounded-3xl p-10 shadow-2xl border border-purple-400/30 text-center max-w-md w-full">
+                <h2 className="section-title mb-2">It's a Match!</h2>
+                <p className="text-lg text-purple-200 mb-6">
+                  You matched with <span className="font-semibold text-white">{matchedProfile.name}</span>
+                </p>
+                <img
+                  src={matchedProfile.image}
+                  alt={matchedProfile.name}
+                  className="w-28 h-28 rounded-full mx-auto mb-4 border-4 border-purple-400/40 shadow-lg object-cover"
+                />
+                <button
+                  onClick={() => setShowMatchModal(false)}
+                  className="mt-4 px-6 py-2 bg-purple-600/80 hover:bg-purple-700/90 text-white rounded-full font-semibold shadow-md transition"
+                >
+                  Continue
+                </button>
               </div>
-            </MatchModal>
+            </motion.div>
           )}
         </AnimatePresence>
-        <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
-          {/* Enhanced Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="text-center mb-12"
-          >
-            <div className="flex items-center justify-center space-x-4 mb-6">
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.2, duration: 0.6 }}
-              >
-                <Target className="w-10 h-10 text-purple-400" />
-              </motion.div>
-              <GradientText className="text-4xl font-bold">
-                {userRole === "startup"
-                  ? "Find Investors"
-                  : "Discover Startups"}
-              </GradientText>
-              <motion.div
-                initial={{ scale: 0, rotate: 180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                <Globe className="w-10 h-10 text-purple-400" />
-              </motion.div>
-            </div>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
-              className="text-gray-400 text-lg font-light"
-            >
-              Swipe right to like, left to pass
-            </motion.p>
-          </motion.div>
-
+        <div className="relative z-10 max-w-2xl mx-auto px-4 py-8 flex flex-col items-center justify-center">
+          <h1 className="section-title text-center mb-2">
+            {userRole === 'startup' ? 'Discover Investors' : 'Discover Startups'}
+          </h1>
+          <p className="section-description text-center mb-8">
+            Swipe right to like, left to pass
+          </p>
           {/* Stack Card UI */}
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-8 mb-8">
             <Stack
               randomRotation={true}
               sensitivity={180}
@@ -728,37 +701,21 @@ function TinderPage() {
               onSwipeRight={handleLike}
             />
           </div>
-
           {/* Enhanced Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7, duration: 0.6 }}
-            className="text-center mt-12"
-          >
-            <StatsCard className="inline-block">
-              <div className="flex justify-center gap-12 text-sm">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    <div className="text-green-400 font-bold text-xl">
-                      {likedCards.length}
-                    </div>
-                  </div>
-                  <div className="text-gray-400 font-medium">Liked</div>
-                </div>
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                    <div className="text-red-400 font-bold text-xl">
-                      {dislikedCards.length}
-                    </div>
-                  </div>
-                  <div className="text-gray-400 font-medium">Passed</div>
-                </div>
+          <div className="flex justify-center mt-6">
+            <div className="bg-black/60 border border-purple-400/20 rounded-2xl px-8 py-4 shadow-lg backdrop-blur-md flex gap-12">
+              <div className="flex flex-col items-center">
+                <div className="w-4 h-4 bg-green-500 rounded-full animate-pulse mb-1"></div>
+                <div className="text-green-400 font-bold text-xl">{likedCards.length}</div>
+                <div className="text-gray-400 font-medium text-sm">Liked</div>
               </div>
-            </StatsCard>
-          </motion.div>
+              <div className="flex flex-col items-center">
+                <div className="w-4 h-4 bg-red-500 rounded-full animate-pulse mb-1"></div>
+                <div className="text-red-400 font-bold text-xl">{dislikedCards.length}</div>
+                <div className="text-gray-400 font-medium text-sm">Passed</div>
+              </div>
+            </div>
+          </div>
         </div>
       </GlobalStyle>
     </>

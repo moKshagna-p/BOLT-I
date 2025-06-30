@@ -163,7 +163,9 @@ app.get('/api/business/:id', async (req, res) => {
             fundingNeeded: startupProfile.fundingNeeded || null,
             website: startupProfile.website || null,
             location: startupProfile.location || null,
-            lastUpdated: startupProfile.updatedAt || startupProfile.createdAt
+            lastUpdated: startupProfile.updatedAt || startupProfile.createdAt,
+            equityStructure: startupProfile.equityStructure || [{ name: 'Owner', percentage: 100 }],
+            lastValuation: startupProfile.lastValuation || null
           });
         }
       } catch (jwtError) {
@@ -187,7 +189,9 @@ app.get('/api/business/:id', async (req, res) => {
         fundingNeeded: startupProfile.fundingNeeded || null,
         website: startupProfile.website || null,
         location: startupProfile.location || null,
-        lastUpdated: startupProfile.updatedAt || startupProfile.createdAt
+        lastUpdated: startupProfile.updatedAt || startupProfile.createdAt,
+        equityStructure: startupProfile.equityStructure || [{ name: 'Owner', percentage: 100 }],
+        lastValuation: startupProfile.lastValuation || null
       });
     }
     // Fallback to demo data if not found
@@ -201,7 +205,9 @@ app.get('/api/business/:id', async (req, res) => {
       fundingNeeded: "$500K",
       website: null,
       location: null,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      equityStructure: [{ name: 'Owner', percentage: 100 }],
+      lastValuation: 1000000
     };
     return res.json(demoData);
   } catch (error) {
@@ -217,7 +223,9 @@ app.get('/api/business/:id', async (req, res) => {
       fundingNeeded: "$500K",
       website: null,
       location: null,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      equityStructure: [{ name: 'Owner', percentage: 100 }],
+      lastValuation: 1000000
     };
     res.json(demoData);
   }
@@ -689,6 +697,7 @@ app.get('/api/user/investor-details', authenticateToken, async (req, res) => {
 // POST /api/user/startup-details - Store startup details
 app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
   try {
+    const database = await connectToDatabase();
     const {
       companyName,
       industry,
@@ -701,15 +710,42 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
       location,
       logo,
       tags,
-      monthlyData
+      monthlyData,
+      equityStructure,
+      lastValuation
     } = req.body;
 
+    // PATCH-like: If only equityStructure or lastValuation is sent, update just those fields
+    if ((equityStructure || lastValuation) && !companyName && !industry && !stage && !description) {
+      const updateFields = {};
+      if (equityStructure && Array.isArray(equityStructure) && equityStructure.length > 0) {
+        updateFields.equityStructure = equityStructure;
+      }
+      if (lastValuation) {
+        updateFields.lastValuation = lastValuation;
+      }
+      if (Object.keys(updateFields).length > 0) {
+        updateFields.updatedAt = new Date().toISOString();
+        await database.collection('startup_profiles').updateOne(
+          { userId: req.user.userId },
+          { $set: updateFields },
+          { upsert: true }
+        );
+        return res.json({ success: true, message: 'Equity/valuation updated' });
+      }
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    // Full update (all required fields)
     if (!companyName || !industry || !stage || !description) {
       return res.status(400).json({ error: 'Required fields: companyName, industry, stage, description' });
     }
 
-    const database = await connectToDatabase();
-    
+    // Always set equityStructure to default if missing or empty
+    let equityToStore = equityStructure && Array.isArray(equityStructure) && equityStructure.length > 0
+      ? equityStructure
+      : [{ name: 'Owner', percentage: 100 }];
+
     // Create or update startup profile
     const startupData = {
       userId: req.user.userId,
@@ -724,6 +760,8 @@ app.post('/api/user/startup-details', authenticateToken, async (req, res) => {
       location: location || null,
       logo: logo || null,
       tags: tags || [],
+      equityStructure: equityToStore,
+      lastValuation: lastValuation || null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

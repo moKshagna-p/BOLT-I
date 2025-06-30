@@ -12,9 +12,13 @@ import {
  
   Area,
   ComposedChart,
-  Legend
+  Legend,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
 import { useParams } from "react-router-dom";
+import styled from 'styled-components';
 
 const DEFAULT_FORECAST_MONTHS = 12;
 const DEFAULTS = {
@@ -237,6 +241,31 @@ const getEmptyMonth = (index: number) => ({
   fundingRound: null
 });
 
+const COLORS = [
+  '#8b5cf6', '#22c55e', '#f59e42', '#ef4444', '#06b6d4', '#eab308', '#6366f1', '#84cc16', '#f472b6', '#0ea5e9'
+];
+
+const EquitySection = styled.div`
+  background: rgba(39, 39, 42, 0.7);
+  border: 1px solid rgba(139, 92, 246, 0.18);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+`;
+
+const EquityRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+`;
+
+const ErrorText = styled.div`
+  color: #ef4444;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+`;
+
 const AnalyticsPage: React.FC = () => {
   const { startupId } = useParams();
   const [forecastMonthsCount, setForecastMonthsCount] = useState(DEFAULT_FORECAST_MONTHS);
@@ -255,6 +284,12 @@ const AnalyticsPage: React.FC = () => {
   const [showAddMonth, setShowAddMonth] = useState(false);
   const [newMonth, setNewMonth] = useState<any>(getEmptyMonth(monthsData.length));
   const [addMonthLoading, setAddMonthLoading] = useState(false);
+  const [equityStructure, setEquityStructure] = useState<{ name: string; percentage: number }[]>([]);
+  const [lastValuation, setLastValuation] = useState<number | null>(null);
+  const [showAddStakeholder, setShowAddStakeholder] = useState(false);
+  const [newStakeholder, setNewStakeholder] = useState({ name: '', percentage: 0 });
+  const [valuationInput, setValuationInput] = useState<string>('');
+  const [equityError, setEquityError] = useState('');
 
   // Fetch monthly data from MongoDB on component mount
   useEffect(() => {
@@ -316,6 +351,24 @@ const AnalyticsPage: React.FC = () => {
     fetchStartupName();
   }, [startupId]);
 
+  // Fetch equity structure and valuation
+  useEffect(() => {
+    const fetchEquity = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        let url = 'http://localhost:3001/api/business/' + (startupId || JSON.parse(atob(token.split('.')[1])).userId);
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) return;
+        const data = await res.json();
+        setEquityStructure(data.equityStructure || [{ name: 'Owner', percentage: 100 }]);
+        setLastValuation(data.lastValuation || null);
+        setValuationInput(data.lastValuation ? String(data.lastValuation) : '');
+      } catch {}
+    };
+    fetchEquity();
+  }, [startupId]);
+
   const handleSimulate = () => {
     if (monthsData.length === 0) {
       setError('No monthly data available for simulation');
@@ -371,6 +424,76 @@ const AnalyticsPage: React.FC = () => {
       alert('Failed to add month.');
     } finally {
       setAddMonthLoading(false);
+    }
+  };
+
+  const handleAddStakeholder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStakeholder.name || !newStakeholder.percentage || !valuationInput) {
+      setEquityError('All fields are required.');
+      return;
+    }
+    const perc = Number(newStakeholder.percentage);
+    if (perc <= 0 || perc >= 100) {
+      setEquityError('Percentage must be between 0 and 100.');
+      return;
+    }
+    const newVal = Number(valuationInput);
+    if (isNaN(newVal) || newVal <= 0) {
+      setEquityError('Valuation must be a positive number.');
+      return;
+    }
+    // Dilute existing holders
+    const remaining = 100 - perc;
+    const updated = equityStructure.map(holder => ({
+      ...holder,
+      percentage: Number(((holder.percentage / 100) * remaining).toFixed(2))
+    }));
+    const newStruct = [...updated, { name: newStakeholder.name, percentage: perc }];
+    setEquityStructure(newStruct);
+    setLastValuation(newVal);
+    setShowAddStakeholder(false);
+    setNewStakeholder({ name: '', percentage: 0 });
+    setEquityError('');
+    // Persist to backend
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      await fetch('http://localhost:3001/api/user/startup-details', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          equityStructure: newStruct,
+          lastValuation: newVal
+        })
+      });
+    } catch {}
+  };
+
+  const handleValuationChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValuationInput(e.target.value);
+    const newVal = Number(e.target.value);
+    if (!isNaN(newVal) && newVal > 0) {
+      setLastValuation(newVal);
+      // Persist to backend
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        await fetch('http://localhost:3001/api/user/startup-details', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            equityStructure,
+            lastValuation: newVal
+          })
+        });
+      } catch {}
     }
   };
 
@@ -714,6 +837,111 @@ const AnalyticsPage: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Equity Split Section */}
+          <EquitySection>
+            <h3 className="text-lg font-semibold text-gray-100 mb-2">Equity Structure</h3>
+            <p className="text-gray-400 text-sm mb-4">Current ownership breakdown. Add a stakeholder to simulate dilution.</p>
+            {equityError && <ErrorText>{equityError}</ErrorText>}
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              <PieChart width={320} height={320}>
+                <Pie
+                  data={equityStructure}
+                  dataKey="percentage"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  label={({ name, percentage }) => `${name}: ${percentage}%`}
+                >
+                  {equityStructure.map((entry, idx) => (
+                    <Cell key={`cell-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number) => `${value}%`} />
+                <Legend />
+              </PieChart>
+              <div>
+                <div className="mb-4">
+                  <label className="block text-gray-200 font-medium mb-1">Last Valuation ($)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={valuationInput}
+                    onChange={handleValuationChange}
+                    className="w-full bg-[#23232b] text-gray-100 rounded px-3 py-2"
+                  />
+                </div>
+                <button
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded-lg shadow"
+                  onClick={() => setShowAddStakeholder(true)}
+                  type="button"
+                >
+                  + Add Stakeholder
+                </button>
+              </div>
+            </div>
+            <div className="mt-6">
+              {equityStructure.map((holder, idx) => (
+                <EquityRow key={idx}>
+                  <span className="text-gray-100 font-medium" style={{ minWidth: 120 }}>{holder.name}</span>
+                  <span className="text-gray-400">{holder.percentage}%</span>
+                </EquityRow>
+              ))}
+            </div>
+            {showAddStakeholder && (
+              <form onSubmit={handleAddStakeholder} className="mt-6 bg-[#23232b] rounded-lg p-6">
+                <h4 className="text-gray-100 font-semibold mb-2">Add New Stakeholder</h4>
+                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                  <input
+                    type="text"
+                    placeholder="Stakeholder Name"
+                    value={newStakeholder.name}
+                    onChange={e => setNewStakeholder({ ...newStakeholder, name: e.target.value })}
+                    className="bg-[#18181b] text-gray-100 rounded px-3 py-2 flex-1"
+                    required
+                  />
+                  <input
+                    type="number"
+                    min={0.1}
+                    max={99.9}
+                    step={0.1}
+                    placeholder="% Equity"
+                    value={newStakeholder.percentage}
+                    onChange={e => setNewStakeholder({ ...newStakeholder, percentage: Number(e.target.value) })}
+                    className="bg-[#18181b] text-gray-100 rounded px-3 py-2 flex-1"
+                    required
+                  />
+                </div>
+                <div className="mb-4">
+                  <label className="block text-gray-200 font-medium mb-1">Valuation ($)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1000}
+                    value={valuationInput}
+                    onChange={e => setValuationInput(e.target.value)}
+                    className="w-full bg-[#18181b] text-gray-100 rounded px-3 py-2"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-6 py-2 rounded-lg shadow"
+                >
+                  Add Stakeholder
+                </button>
+                <button
+                  type="button"
+                  className="ml-4 text-gray-400 underline"
+                  onClick={() => setShowAddStakeholder(false)}
+                >
+                  Cancel
+                </button>
+              </form>
+            )}
+          </EquitySection>
         </div>
       </div>
     </div>
