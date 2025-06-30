@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   motion,
   PanInfo,
@@ -24,6 +24,7 @@ import {
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import Stack from './Stack';
+import bgVideo from '../bg.mp4';
 
 const Card = styled(motion.div)`
   position: absolute;
@@ -313,7 +314,7 @@ interface CardData {
   tags: string[];
 }
 
-const TinderPage: React.FC = () => {
+function TinderPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [likedCards, setLikedCards] = useState<number[]>([]);
@@ -332,7 +333,7 @@ const TinderPage: React.FC = () => {
   const navigate = useNavigate();
 
   // Get user role from backend using token
-  React.useEffect(() => {
+  useEffect(() => {
     const getUserRole = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -358,7 +359,7 @@ const TinderPage: React.FC = () => {
   }, []);
 
   // Fetch profiles from backend based on user role
-  React.useEffect(() => {
+  useEffect(() => {
     if (!userRole) return;
     setLoading(true);
     setError(null);
@@ -506,7 +507,12 @@ const TinderPage: React.FC = () => {
   console.log("TinderPage state:", { profiles, loading, error, userRole });
 
   // Map profiles to Stack's expected format
-  const images = profiles.map((profile) => ({ id: profile.id, img: profile.image }));
+  const images = profiles.map((profile) => ({
+    id: profile.id,
+    img: profile.image,
+    name: profile.name,
+    company: profile.company
+  }));
 
   if (!userRole || loading) {
     return (
@@ -635,50 +641,42 @@ const TinderPage: React.FC = () => {
 
   return (
     <>
-      {/* Match Modal */}
-      <AnimatePresence>
-        {showMatchModal && matchedProfile && (
-          <MatchModal
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <div className="modal-content">
-              <CheckCircle className="mx-auto mb-4 text-green-400" size={56} />
-              <div className="modal-title">It's a Match!</div>
-              <div className="modal-desc">
-                You and{" "}
-                <span className="font-bold text-purple-300">
-                  {matchedProfile.name}
-                </span>{" "}
-                have liked each other.
-                <br />
-                Start a conversation now!
+      {/* Video Background */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="fixed inset-0 w-full h-full object-cover z-0"
+        src={bgVideo}
+      />
+      {/* Overlay for readability */}
+      <div className="fixed inset-0 bg-gradient-to-br from-[#1e1b4b]/80 via-[#312e81]/70 to-[#0f172a]/80 z-10 pointer-events-none" />
+      <GlobalStyle className="pt-20 min-h-screen relative flex flex-col items-center justify-center z-20">
+        {/* Match Modal */}
+        <AnimatePresence>
+          {showMatchModal && matchedProfile && (
+            <MatchModal
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <div className="modal-content">
+                <CheckCircle className="mx-auto mb-4 text-green-400" size={56} />
+                <div className="modal-title">It's a Match!</div>
+                <div className="modal-desc">
+                  You and{" "}
+                  <span className="font-bold text-purple-300">
+                    {matchedProfile.name}
+                  </span>{" "}
+                  have liked each other.
+                  <br />
+                  Start a conversation now!
+                </div>
               </div>
-            </div>
-          </MatchModal>
-        )}
-      </AnimatePresence>
-      <GlobalStyle className="pt-20 min-h-screen bg-[#121212] relative overflow-hidden">
-        {/* Enhanced background effects */}
-        <div
-          className="absolute inset-0 opacity-30"
-          style={{
-            background:
-              "radial-gradient(circle at 20% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.1) 0%, transparent 50%)",
-            filter: "blur(100px)",
-          }}
-        />
-
-        {/* Floating particles */}
-        <FloatingParticles>
-          <Particle $delay={0} style={{ top: "20%", left: "10%" }} />
-          <Particle $delay={2} style={{ top: "60%", left: "80%" }} />
-          <Particle $delay={4} style={{ top: "80%", left: "20%" }} />
-          <Particle $delay={1} style={{ top: "30%", left: "70%" }} />
-          <Particle $delay={3} style={{ top: "70%", left: "30%" }} />
-        </FloatingParticles>
-
+            </MatchModal>
+          )}
+        </AnimatePresence>
         <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
           {/* Enhanced Header */}
           <motion.div
@@ -718,158 +716,18 @@ const TinderPage: React.FC = () => {
             </motion.p>
           </motion.div>
 
-          {/* Enhanced Card Container */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.8 }}
-            className="flex justify-center"
-          >
-            <div className="relative w-full max-w-md h-[580px]">
-              <Card
-                drag="x"
-                dragConstraints={{ left: -200, right: 200 }}
-                onDragEnd={handleDragEnd}
-                animate={{
-                  x: direction * 500,
-                  opacity: direction !== 0 ? 0 : 1,
-                }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                onClick={() => {
-                  if (
-                    userRole === "investor" &&
-                    currentCard.type === "startup" &&
-                    currentCard.id
-                  ) {
-                    navigate(`/analytics/${currentCard.id}`);
-                  }
-                }}
-                style={{
-                  x,
-                  rotate,
-                  opacity,
-                  zIndex: 10,
-                  cursor:
-                    userRole === "investor" && currentCard.type === "startup"
-                      ? "pointer"
-                      : "grab",
-                }}
-              >
-                <CardImage $imageUrl={currentCard.image}>
-                  <div className="absolute bottom-6 left-6 right-6">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-purple-600/20 rounded-full backdrop-blur-sm">
-                        <Building2 className="w-5 h-5 text-purple-300" />
-                      </div>
-                      <span className="text-white font-bold text-lg">
-                        {currentCard.company}
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {currentCard.tags
-                        .slice(0, 3)
-                        .map((tag: string, index: number) => (
-                          <Tag key={index}>{tag}</Tag>
-                        ))}
-                    </div>
-                  </div>
-                </CardImage>
-
-                <CardContent>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-100 mb-3">
-                      {currentCard.name}
-                    </h2>
-                    <p className="text-gray-300 text-sm leading-relaxed mb-6">
-                      {currentCard.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    {currentCard.type === "startup" ? (
-                      <>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="p-1.5 bg-purple-600/20 rounded-full">
-                            <Users className="w-4 h-4 text-purple-300" />
-                          </div>
-                          <span className="font-medium">
-                            {currentCard.teamSize} team
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="p-1.5 bg-green-600/20 rounded-full">
-                            <DollarSign className="w-4 h-4 text-green-300" />
-                          </div>
-                          <span className="font-medium">
-                            {currentCard.revenue}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="p-1.5 bg-blue-600/20 rounded-full">
-                            <TrendingUp className="w-4 h-4 text-blue-300" />
-                          </div>
-                          <span className="font-medium">
-                            {currentCard.stage}
-                          </span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="p-1.5 bg-yellow-600/20 rounded-full">
-                            <Star className="w-4 h-4 text-yellow-300" />
-                          </div>
-                          <span className="font-medium">
-                            {currentCard.portfolioSize}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-gray-400">
-                          <div className="p-1.5 bg-purple-600/20 rounded-full">
-                            <Building2 className="w-4 h-4 text-purple-300" />
-                          </div>
-                          <span className="font-medium">
-                            {Array.isArray(currentCard.investmentFocus)
-                              ? currentCard.investmentFocus
-                                  .slice(0, 2)
-                                  .join(", ")
-                              : ""}
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Enhanced Action buttons */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5, duration: 0.6 }}
-                className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex gap-8"
-              >
-                <ActionButton
-                  $variant="dislike"
-                  onClick={handleDislike}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="glow-effect"
-                >
-                  <X className="w-8 h-8" />
-                </ActionButton>
-
-                <ActionButton
-                  $variant="like"
-                  onClick={handleLike}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  className="glow-effect"
-                >
-                  <Heart className="w-8 h-8" />
-                </ActionButton>
-              </motion.div>
-            </div>
-          </motion.div>
+          {/* Stack Card UI */}
+          <div className="flex justify-center mt-8">
+            <Stack
+              randomRotation={true}
+              sensitivity={180}
+              sendToBackOnClick={false}
+              cardDimensions={{ width: 340, height: 480 }}
+              cardsData={images}
+              onSwipeLeft={handleDislike}
+              onSwipeRight={handleLike}
+            />
+          </div>
 
           {/* Enhanced Stats */}
           <motion.div
@@ -905,6 +763,6 @@ const TinderPage: React.FC = () => {
       </GlobalStyle>
     </>
   );
-};
+}
 
 export default TinderPage;

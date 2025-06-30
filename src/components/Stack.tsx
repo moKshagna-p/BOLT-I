@@ -1,26 +1,35 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { useState, ReactNode } from "react";
+import { useState } from "react";
 
-interface CardData {
+type CardData = {
   id: number | string;
   img: string;
-}
+  name?: string;
+  company?: string;
+};
 
-interface CardRotateProps {
-  children: ReactNode;
+type CardRotateProps = {
+  children: React.ReactNode;
   onSendToBack: () => void;
   sensitivity: number;
-}
+  onSwipeLeft?: () => void;
+  onSwipeRight?: () => void;
+};
 
-const CardRotate: React.FC<CardRotateProps> = ({ children, onSendToBack, sensitivity }) => {
+function CardRotate({ children, onSendToBack, sensitivity, onSwipeLeft, onSwipeRight }: CardRotateProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const rotateX = useTransform(y, [-100, 100], [60, -60]);
   const rotateY = useTransform(x, [-100, 100], [-60, 60]);
 
   function handleDragEnd(_: any, info: { offset: { x: number; y: number } }) {
-    if (
-      Math.abs(info.offset.x) > sensitivity ||
+    if (info.offset.x > sensitivity) {
+      onSwipeRight && onSwipeRight();
+      onSendToBack();
+    } else if (info.offset.x < -sensitivity) {
+      onSwipeLeft && onSwipeLeft();
+      onSendToBack();
+    } else if (
       Math.abs(info.offset.y) > sensitivity
     ) {
       onSendToBack();
@@ -43,33 +52,37 @@ const CardRotate: React.FC<CardRotateProps> = ({ children, onSendToBack, sensiti
       {children}
     </motion.div>
   );
-};
+}
 
-interface StackProps {
+type StackProps = {
   randomRotation?: boolean;
   sensitivity?: number;
   cardDimensions?: { width: number; height: number };
   cardsData?: CardData[];
   animationConfig?: { stiffness: number; damping: number };
   sendToBackOnClick?: boolean;
-}
+  onSwipeLeft?: (card: CardData) => void;
+  onSwipeRight?: (card: CardData) => void;
+};
 
-const Stack: React.FC<StackProps> = ({
+export default function Stack({
   randomRotation = false,
   sensitivity = 200,
   cardDimensions = { width: 208, height: 208 },
   cardsData = [],
   animationConfig = { stiffness: 260, damping: 20 },
-  sendToBackOnClick = false
-}) => {
+  sendToBackOnClick = false,
+  onSwipeLeft,
+  onSwipeRight,
+}: StackProps) {
   const [cards, setCards] = useState<CardData[]>(
     cardsData.length
       ? cardsData
       : [
-        { id: 1, img: "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format" },
-        { id: 2, img: "https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format" },
-        { id: 3, img: "https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format" },
-        { id: 4, img: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format" }
+        { id: 1, img: "https://images.unsplash.com/photo-1480074568708-e7b720bb3f09?q=80&w=500&auto=format", name: "John Doe", company: "Acme Inc." },
+        { id: 2, img: "https://images.unsplash.com/photo-1449844908441-8829872d2607?q=80&w=500&auto=format", name: "Jane Smith", company: "Beta LLC" },
+        { id: 3, img: "https://images.unsplash.com/photo-1452626212852-811d58933cae?q=80&w=500&auto=format", name: "Alice Lee", company: "Gamma Corp." },
+        { id: 4, img: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?q=80&w=500&auto=format", name: "Bob Brown", company: "Delta Ltd." }
       ]
   );
 
@@ -102,9 +115,11 @@ const Stack: React.FC<StackProps> = ({
             key={card.id}
             onSendToBack={() => sendToBack(card.id)}
             sensitivity={sensitivity}
+            onSwipeLeft={onSwipeLeft ? () => onSwipeLeft(card) : undefined}
+            onSwipeRight={onSwipeRight ? () => onSwipeRight(card) : undefined}
           >
             <motion.div
-              className="rounded-2xl overflow-hidden border-4 border-white"
+              className="rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-black/10"
               onClick={() => sendToBackOnClick && sendToBack(card.id)}
               animate={{
                 rotateZ: (cards.length - index - 1) * 4 + randomRotate,
@@ -120,6 +135,7 @@ const Stack: React.FC<StackProps> = ({
               style={{
                 width: cardDimensions.width,
                 height: cardDimensions.height,
+                position: 'relative',
               }}
             >
               <img
@@ -127,12 +143,31 @@ const Stack: React.FC<StackProps> = ({
                 alt={`card-${card.id}`}
                 className="w-full h-full object-cover pointer-events-none"
               />
+              {(card.name || card.company) && (
+                <div
+                  className="absolute bottom-0 left-0 w-full px-6 py-4 backdrop-blur-md"
+                  style={{
+                    borderBottomLeftRadius: 16,
+                    borderBottomRightRadius: 16,
+                    background: 'linear-gradient(90deg, #7c3aedcc 0%, #6366f1cc 100%)',
+                  }}
+                >
+                  {card.name && (
+                    <div className="text-lg font-bold text-white drop-shadow-sm truncate">
+                      {card.name}
+                    </div>
+                  )}
+                  {card.company && (
+                    <div className="text-sm text-white/80 font-medium truncate">
+                      {card.company}
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </CardRotate>
         );
       })}
     </div>
   );
-};
-
-export default Stack; 
+} 
